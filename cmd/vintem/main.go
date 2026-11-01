@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"syscall"
 
 	"github.com/vintemhq/vintem/internal/adapters/psp"
@@ -26,6 +27,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	relogio := clock.Sistema{}
+	info, _ := debug.ReadBuildInfo()
 	err := cli.Run(ctx, os.Args[1:], cli.Ambiente{
 		Saida:  os.Stdout,
 		Getenv: os.Getenv,
@@ -36,7 +38,7 @@ func main() {
 			return psp.NewRegistry(sandbox.New(relogio, sandbox.ComStore(f.Store)), efi.New(f.Credenciais, relogio), inter.New(f.Credenciais, relogio), sicoob.New(f.Credenciais, relogio), bb.New(f.Credenciais, relogio))
 		},
 		Clock:  relogio,
-		Versao: version,
+		Versao: resolverVersao(version, info),
 	})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "erro:", err)
