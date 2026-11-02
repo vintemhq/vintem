@@ -26,12 +26,20 @@ type API struct {
 	// ChavePix é a chave usada quando o agente não informa outra.
 	ChavePix string
 	HTTP     *http.Client
+	// Agora dá a hora usada no período padrão de listar_cobrancas; nil usa time.Now.
+	Agora func() time.Time
 }
+
+// periodoPadrao é o que listar_cobrancas lista quando o agente não dá o período.
+const periodoPadrao = 24 * time.Hour
 
 // NovoServidor monta o servidor MCP com as ferramentas de cobrança e devolução.
 func NovoServidor(api API, versao string) *sdk.Server {
 	if api.HTTP == nil {
 		api.HTTP = &http.Client{Timeout: 30 * time.Second}
+	}
+	if api.Agora == nil {
+		api.Agora = time.Now
 	}
 	api.URL = strings.TrimRight(api.URL, "/")
 	s := sdk.NewServer(&sdk.Implementation{Name: "vintem", Title: "Vintém: Pix sem gateway", Version: versao}, &sdk.ServerOptions{
@@ -57,13 +65,7 @@ func NovoServidor(api API, versao string) *sdk.Server {
 			corpo["solicitacaoPagador"] = in.Descricao
 		}
 		if in.DevedorDocumento != "" {
-			devedor := map[string]string{"nome": in.DevedorNome}
-			if len(in.DevedorDocumento) == 14 {
-				devedor["cnpj"] = in.DevedorDocumento
-			} else {
-				devedor["cpf"] = in.DevedorDocumento
-			}
-			corpo["devedor"] = devedor
+			corpo["devedor"] = devedor(in.DevedorNome, in.DevedorDocumento)
 		}
 		return api.chamar(ctx, http.MethodPost, "/cob", corpo, map[string]string{"Idempotency-Key": cmp.Or(in.ChaveIdempotencia, idAleatorio())})
 	})
@@ -77,14 +79,66 @@ func NovoServidor(api API, versao string) *sdk.Server {
 	})
 
 	sdk.AddTool(s, &sdk.Tool{
-		Name:        "listar_cobrancas",
-		Description: "Lista as cobranças Pix imediatas criadas num período, opcionalmente por status.",
+		Name: "listar_cobrancas",
+		Description: "Lista as cobranças Pix imediatas criadas num período, opcionalmente por status. " +
+			"Sem inicio e fim, lista as das últimas 24 horas; para outro período, informe os dois.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in ListarCobrancas) (*sdk.CallToolResult, any, error) {
-		q := url.Values{"inicio": {in.Inicio}, "fim": {in.Fim}}
+		inicio, fim := in.Inicio, in.Fim
+		switch {
+		case inicio == "" && fim == "":
+			agora := api.Agora()
+			inicio, fim = agora.Add(-periodoPadrao).Format(time.RFC3339), agora.Format(time.RFC3339)
+		case inicio == "":
+			return erroParaAgente("falta inicio: informe inicio e fim juntos (RFC 3339), ou nenhum dos dois para as últimas 24 horas"), nil, nil
+		case fim == "":
+			return erroParaAgente("falta fim: informe inicio e fim juntos (RFC 3339), ou nenhum dos dois para as últimas 24 horas"), nil, nil
+		}
+		q := url.Values{"inicio": {inicio}, "fim": {fim}}
 		if in.Status != "" {
 			q.Set("status", in.Status)
 		}
 		return api.chamar(ctx, http.MethodGet, "/cob?"+q.Encode(), nil, nil)
+	})
+
+	sdk.AddTool(s, &sdk.Tool{
+		Name: "criar_cobranca_vencimento",
+		Description: "Cria uma cobrança Pix com vencimento (cobv), o boleto do Pix: tem data de vencimento, devedor identificado e, se quiser, multa e juros por atraso. " +
+			"Devolve o txid e o Pix Copia e Cola. Tentar de novo com o mesmo txid e os mesmos dados devolve a mesma cobrança, sem criar outra.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in CriarCobrancaVencimento) (*sdk.CallToolResult, any, error) {
+		chave := cmp.Or(in.Chave, api.ChavePix)
+		if chave == "" {
+			return erroParaAgente("informe a chave Pix que recebe (ou defina VINTEM_CHAVE_PIX no vintem mcp)"), nil, nil
+		}
+		if in.DevedorNome == "" || in.DevedorDocumento == "" {
+			return erroParaAgente("cobrança com vencimento exige o devedor: informe devedor_nome e devedor_documento (CPF ou CNPJ)"), nil, nil
+		}
+		calendario := map[string]any{"dataDeVencimento": in.Vencimento}
+		if in.ValidadeAposVencimento != nil {
+			calendario["validadeAposVencimento"] = *in.ValidadeAposVencimento
+		}
+		valor := map[string]any{"original": in.Valor}
+		if in.MultaPercentual != "" {
+			valor["multa"] = map[string]any{"modalidade": 2, "valorPerc": in.MultaPercentual}
+		}
+		if in.JurosPercentualMes != "" {
+			valor["juros"] = map[string]any{"modalidade": 3, "valorPerc": in.JurosPercentualMes}
+		}
+		corpo := map[string]any{"calendario": calendario, "valor": valor, "chave": chave, "devedor": devedor(in.DevedorNome, in.DevedorDocumento)}
+		if in.Descricao != "" {
+			corpo["solicitacaoPagador"] = in.Descricao
+		}
+		// O txid é a chave de idempotência: tentar de novo devolve a mesma
+		// cobrança em vez do 409 de txid repetido (RN-11).
+		txid := cmp.Or(in.Txid, idAleatorio())
+		return api.chamar(ctx, http.MethodPut, "/cobv/"+url.PathEscape(txid), corpo, map[string]string{"Idempotency-Key": "cobv-" + txid})
+	})
+
+	sdk.AddTool(s, &sdk.Tool{
+		Name: "consultar_cobranca_vencimento",
+		Description: "Consulta uma cobrança Pix com vencimento (cobv) pelo txid. Se ela ainda estiver ATIVA, o Vintém pergunta ao banco se já foi paga. " +
+			"Os pagamentos aparecem em pix[], com o endToEndId que a devolução pede.",
+	}, func(ctx context.Context, _ *sdk.CallToolRequest, in Txid) (*sdk.CallToolResult, any, error) {
+		return api.chamar(ctx, http.MethodGet, "/cobv/"+url.PathEscape(in.Txid), nil, nil)
 	})
 
 	sdk.AddTool(s, &sdk.Tool{
@@ -126,14 +180,27 @@ type (
 		DevedorDocumento  string `json:"devedor_documento,omitempty" jsonschema:"CPF (11 dígitos) ou CNPJ (14 dígitos) de quem paga, só números"`
 		ChaveIdempotencia string `json:"chave_idempotencia,omitempty" jsonschema:"repita o mesmo valor para não criar a cobrança duas vezes ao tentar de novo"`
 	}
-	// Txid é a entrada de consultar_cobranca e cancelar_cobranca.
+	// CriarCobrancaVencimento é a entrada de criar_cobranca_vencimento.
+	CriarCobrancaVencimento struct {
+		Valor                  string `json:"valor" jsonschema:"valor em reais com duas casas, ex. 49.90"`
+		Vencimento             string `json:"vencimento" jsonschema:"data de vencimento, AAAA-MM-DD (ex. 2026-11-30)"`
+		DevedorNome            string `json:"devedor_nome" jsonschema:"nome de quem paga"`
+		DevedorDocumento       string `json:"devedor_documento" jsonschema:"CPF (11 dígitos) ou CNPJ (14 dígitos) de quem paga, só números"`
+		ValidadeAposVencimento *int   `json:"validade_apos_vencimento,omitempty" jsonschema:"dias corridos depois do vencimento em que ainda dá para pagar; padrão 30"`
+		MultaPercentual        string `json:"multa_percentual,omitempty" jsonschema:"multa por atraso, em percentual do valor, ex. 2.00"`
+		JurosPercentualMes     string `json:"juros_percentual_mes,omitempty" jsonschema:"juros por atraso, em percentual ao mês (dias corridos), ex. 1.00"`
+		Descricao              string `json:"descricao,omitempty" jsonschema:"texto que o pagador vê no app do banco (até 140 caracteres)"`
+		Chave                  string `json:"chave,omitempty" jsonschema:"chave Pix que recebe; vazia usa VINTEM_CHAVE_PIX do servidor MCP"`
+		Txid                   string `json:"txid,omitempty" jsonschema:"txid da cobrança (26 a 35 letras e números); repita o mesmo para não criar duas vezes. Vazio gera um novo"`
+	}
+	// Txid é a entrada de consultar_cobranca, consultar_cobranca_vencimento e cancelar_cobranca.
 	Txid struct {
 		Txid string `json:"txid" jsonschema:"txid da cobrança"`
 	}
 	// ListarCobrancas é a entrada de listar_cobrancas.
 	ListarCobrancas struct {
-		Inicio string `json:"inicio" jsonschema:"início do período, RFC 3339 (ex. 2026-10-29T00:00:00-03:00)"`
-		Fim    string `json:"fim" jsonschema:"fim do período, RFC 3339"`
+		Inicio string `json:"inicio,omitempty" jsonschema:"início do período, RFC 3339 (ex. 2026-10-29T00:00:00-03:00); sem inicio e fim, lista as últimas 24 horas"`
+		Fim    string `json:"fim,omitempty" jsonschema:"fim do período, RFC 3339; informe junto com inicio"`
 		Status string `json:"status,omitempty" jsonschema:"filtra por status: ATIVA, CONCLUIDA, REMOVIDA_PELO_USUARIO_RECEBEDOR ou REMOVIDA_PELO_PSP"`
 	}
 	// Devolver é a entrada de devolver_pix.
@@ -193,6 +260,17 @@ func (api API) chamar(ctx context.Context, metodo, caminho string, corpo any, he
 		IsError: resp.StatusCode >= 400,
 		Content: []sdk.Content{&sdk.TextContent{Text: texto}},
 	}, nil, nil
+}
+
+// devedor monta o devedor da cobrança: 14 dígitos é CNPJ, o resto é CPF.
+func devedor(nome, documento string) map[string]string {
+	d := map[string]string{"nome": nome}
+	if len(documento) == 14 {
+		d["cnpj"] = documento
+	} else {
+		d["cpf"] = documento
+	}
+	return d
 }
 
 func erroParaAgente(texto string) *sdk.CallToolResult {
