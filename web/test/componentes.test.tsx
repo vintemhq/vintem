@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { centavosDe, formatarCentavos } from "../src/componentes/Money";
+import { Marca } from "../src/componentes/Simbolo";
 import { estados, StatusBadge } from "../src/componentes/StatusBadge";
 
 describe("Money", () => {
@@ -44,5 +45,15 @@ describe("StatusBadge", () => {
   it("estado desconhecido aparece como veio, sem quebrar", () => {
     render(<StatusBadge status="NOVO_ESTADO" />);
     expect(screen.getByText("NOVO_ESTADO")).toBeTruthy();
+  });
+});
+
+describe("Marca", () => {
+  it("mostra o nome em texto e o símbolo em --brand, escondido do leitor de tela", () => {
+    const { container } = render(<Marca />);
+    expect(screen.getByText("Vintém")).toBeTruthy();
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("aria-hidden")).toBe("true");
+    expect(svg?.querySelector("path")?.getAttribute("fill")).toBe("var(--brand)");
   });
 });

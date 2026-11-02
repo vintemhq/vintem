@@ -1,34 +1,95 @@
 ---
 title: Vintém
 description: Gateway Pix self-hosted e multi-banco. Sua conta, sua infraestrutura, nenhuma taxa de intermediário.
-template: splash
+head:
+  - tag: title
+    content: "Vintém: gateway Pix self-hosted e multi-banco"
 hero:
+  image:
+    light: ../../assets/moeda-claro.svg
+    dark: ../../assets/moeda-escuro.svg
+    alt: ""
   tagline: Gateway Pix self-hosted e multi-banco. Sua conta no banco, sua infraestrutura, nenhuma taxa de intermediário.
   actions:
     - text: Do zero ao Pix pago
       link: /comecar/quickstart/
       icon: right-arrow
-    - text: GitHub
-      link: https://github.com/vintemhq/vintem
-      icon: github
-      variant: minimal
+    - text: Perguntas frequentes
+      link: /referencia/faq/
+      variant: secondary
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 
-![vintem sandbox: uma cobrança Pix é criada e paga em poucos segundos](https://raw.githubusercontent.com/vintemhq/vintem/develop/docs/demo/sandbox.gif)
+<img class="demo" src="https://raw.githubusercontent.com/vintemhq/vintem/develop/docs/demo/sandbox.gif" width="900" height="539" alt="vintem sandbox: uma cobrança Pix é criada e paga em poucos segundos" />
+
+:::caution[Alpha]
+O sandbox funciona, e o adapter da Efí já recebeu Pix de verdade. A API ainda pode mudar antes da `v1.0.0`, e os outros bancos ainda não foram testados contra o banco real. Veja a [situação de cada banco](#bancos).
+:::
 
 <CardGrid>
+  <Card title="Não toca no dinheiro" icon="approve-check">
+    Roda na sua infraestrutura, com as suas credenciais. O Pix cai direto na sua conta, sem passar por ninguém no meio.
+  </Card>
   <Card title="Uma API, vários bancos" icon="random">
     Sua aplicação fala a API Pix do Banco Central uma vez; o Vintém traduz para cada banco, cuida do mTLS e normaliza os webhooks.
   </Card>
-  <Card title="Sandbox com estado" icon="rocket">
-    `vintem sandbox` sobe tudo pronto: cobrança paga em segundos, valores mágicos para testar erro, sem conta PJ.
+  <Card title="Webhook que não se perde" icon="rocket">
+    Eventos assinados, com retry por 24 h e DLQ com reenvio. A conciliação encontra o Pix cujo aviso sumiu.
   </Card>
-  <Card title="Webhook que não se perde" icon="approve-check">
-    Assinado no padrão Standard Webhooks, com retry por 24 h, DLQ com reenvio e conciliação que recupera o Pix cujo aviso sumiu.
+  <Card title="Sandbox com estado" icon="laptop">
+    `vintem sandbox` sobe tudo pronto: cobrança paga em segundos e valores mágicos para testar erro, sem conta no banco.
   </Card>
-  <Card title="Para o seu agente" icon="puzzle">
-    `vintem mcp` dá ao Claude Code (e a qualquer cliente MCP) ferramentas para cobrar, consultar e devolver, com os escopos da API key.
+  <Card title="Pix Automático" icon="list-format">
+    Recorrência, autorização do pagador e cobrança por ciclo, com retentativas. Hoje, só no sandbox.
+  </Card>
+  <Card title="Painel, SDK e MCP" icon="puzzle">
+    Painel embutido no binário, SDK TypeScript gerado do contrato e ferramentas para o seu agente de IA.
   </Card>
 </CardGrid>
+
+## Quanto você paga
+
+O Vintém é gratuito e não cobra nada por Pix. Você paga a tarifa de Pix do **seu** banco, e é só isso.
+
+| Por onde o Pix passa | Taxa | Em R$ 50 | Em R$ 500 |
+|---|---|---|---|
+| [Stripe](https://stripe.com/br/pricing) | 1,19% | R$ 0,60 | R$ 5,95 |
+| [Mercado Pago](https://www.mercadopago.com.br/ferramentas-para-vender/check-out) | 0,99% | R$ 0,50 | R$ 4,95 |
+| [Asaas](https://www.asaas.com/precos-e-taxas) | R$ 2,15 | R$ 2,15 | R$ 2,15 |
+| **Vintém + [Efí](https://sejaefi.com.br/tarifas)** | 1,19% | R$ 0,60 | R$ 5,95 |
+
+No Vintém + Efí, a taxa é toda da Efí, e o Vintém soma 0. O Pix na Stripe é só por convite, o Mercado Pago é o checkout com recebimento na hora, e o Asaas cobra R$ 1,08 nos 3 primeiros meses. Páginas de preço públicas, consultadas em 29/10/2026. A taxa negociada da sua conta pode ser outra. No nosso teste com dinheiro real, numa conta Efí Pro, a Efí cobrou R$ 0,01 num Pix de R$ 1,00 e R$ 0,12 num de R$ 10,00, o que bate com esse 1,19%.
+
+**Sem ilusão:** com a Efí, a taxa é a mesma da Stripe. O que você ganha hoje é ser dono do processo: seus dados, seus webhooks, nenhuma amarra e a liberdade de trocar de banco sem reescrever a integração. A taxa só cai com um banco que limite ou fixe a tarifa de Pix, e esses adapters ainda não foram testados contra o banco real.
+
+## Bancos
+
+Todos fazem cobrança imediata e com vencimento, devolução e webhook. Pix Automático, por enquanto, só no sandbox.
+
+| Banco | Situação |
+|---|---|
+| [Sandbox](/gerado/sandbox/) | Para testar sem conta no banco |
+| [Efí](/gerado/efi/) | **Testado em produção** com dinheiro real: cobrança, webhook, conciliação e devolução. A cobrança com vencimento só foi testada na homologação |
+| [Banco Inter](/gerado/inter/) | Escrito pela documentação oficial. **Não testado no banco real** |
+| [Sicoob](/gerado/sicoob/) | Escrito pela spec do BCB e por relatos públicos. **Não testado no banco real** |
+| [Banco do Brasil](/gerado/bb/) | Escrito pela spec do BCB e por relatos públicos. **Não testado no banco real** |
+
+Tem conta em algum deles? [Conte o que encontrou](https://github.com/vintemhq/vintem/issues), ou [escreva o adapter do seu banco](/gerado/contribuir/).
+
+## Por onde começar
+
+<CardGrid>
+  <LinkCard title="Quero ver funcionando" description="Do zero a um Pix pago no sandbox, em minutos, sem conta no banco." href="/comecar/quickstart/" />
+  <LinkCard title="Quero entender como funciona" description="O caminho de uma cobrança, da sua aplicação ao banco e de volta." href="/conceitos/como-funciona/" />
+  <LinkCard title="Quero colocar em produção" description="Docker Compose, TLS, a conta do banco, webhook e backup." href="/operar/producao/" />
+  <LinkCard title="Quero integrar minha aplicação" description="A referência da API, gerada do contrato." href="/api/" />
+  <LinkCard title="Uso TypeScript" description="SDK tipado, sem dependências, com verificação de webhook." href="/integrar/sdk/" />
+  <LinkCard title="Tenho dúvidas" description="É grátis? O dinheiro passa pelo Vintém? Preciso de CNPJ?" href="/referencia/faq/" />
+</CardGrid>
+
+## De onde vem o nome
+
+O vintém era uma moeda de pouco valor, e não perder um vintém para intermediário é a promessa do projeto. A [ADR-009](/gerado/adr/009-nome-e-marca/) conta a escolha.
+
+Pix é marca do Banco Central do Brasil. O Vintém é um projeto independente, sem vínculo nem endosso do BCB. Nada aqui é aconselhamento jurídico ou regulatório.

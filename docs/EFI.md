@@ -74,6 +74,16 @@ Nesse modo, o Efí pede que você garanta de outro jeito que o aviso veio dele:
 Se o webhook falhar ou sumir, a **conciliação** busca os Pix em `GET /v2/pix` a
 cada 5 minutos (RN-31). Nenhum pagamento depende só do aviso.
 
+**Para cancelar,** por exemplo depois de um teste com túnel temporário:
+
+```sh
+vintem conta webhook minha-loja --remover
+```
+
+O Vintém chama `DELETE /v2/webhook/:chave` e invalida a URL. Antes dele, o webhook
+só saía pela API do Efí: quem já tinha excluído a aplicação precisava criar outra
+para isso. Faça antes de excluir a aplicação no Efí.
+
 ## 4. Testar na homologação
 
 - **Só cobranças de R$ 0,01 a R$ 10,00 são confirmadas e geram webhook.** Acima
@@ -83,8 +93,8 @@ cada 5 minutos (RN-31). Nenhum pagamento depende só do aviso.
 ## O que observamos em produção
 
 - **A tarifa sai do valor recebido, e isso limita a devolução.** Numa conta Efí Pro (CPF),
-  um Pix de R$ 1,00 custou R$ 0,01, e um de R$ 10,00 custou R$ 0,12, cerca de 1,2%. A
-  devolução não teve tarifa. Sem outro saldo na conta, não dá para devolver o valor
+  um Pix de R$ 1,00 custou R$ 0,01, e um de R$ 10,00 custou R$ 0,12, o que bate com a
+  [tarifa pública de 1,19%](https://sejaefi.com.br/tarifas). A devolução não teve tarifa. Sem outro saldo na conta, não dá para devolver o valor
   integral: a devolução de R$ 1,00 foi aceita e depois terminou `NAO_REALIZADO`, sem motivo.
   O valor não realizado volta a ficar disponível. Acompanhe o resultado pelo evento
   `devolucao.atualizada`, não pela resposta do `PUT`. Confira a tarifa da sua conta no painel.

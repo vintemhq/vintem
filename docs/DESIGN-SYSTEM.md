@@ -2,7 +2,7 @@
 
 ## Conceito
 
-**Vintém** é o que dá garantia ao dinheiro. A identidade tem que passar
+**Vintém** cuida do dinheiro de quem o usa. A identidade tem que passar
 **solidez e calma**: quem abre o painel quer saber, em dois segundos, se o
 dinheiro entrou e se alguma coisa está quebrada. Nada de gradiente de fintech,
 nada de animação comemorativa. Ouro aparece como acento da marca, não como cor
@@ -44,6 +44,27 @@ claro, o ouro é `#946C08` e o verde é `#047857`: os tons anteriores (`#B8860B`
 - Espaço em escala de 4px: `--space-1` (4) até `--space-12` (48).
 - Raio: `--radius-sm` 4px · `--radius-md` 8px · `--radius-lg` 12px.
 - Sombra só em elemento flutuante (menu, modal). Card tem borda, não sombra.
+
+## Logo
+
+Vintém era uma moeda, e o símbolo é uma: um disco em `--brand` com o V vazado, que
+deixa o fundo aparecer. A versão com serrilha na borda é só para tamanhos grandes, como
+a abertura do site; o favicon e o cabeçalho usam o disco liso, que continua legível em
+16 px. O nome vem ao lado, em Inter 600 e na cor de texto: o ouro fica só no símbolo.
+
+| Arquivo (em `docs/site`) | Uso |
+|---|---|
+| `src/assets/logo-claro.svg` e `logo-escuro.svg` | Cabeçalho |
+| `src/assets/moeda-claro.svg` e `moeda-escuro.svg` | Abertura da home |
+| `public/favicon.svg` | Favicon; acompanha o tema do navegador |
+| `public/favicon-32.png` | Favicon de reserva |
+| `public/apple-touch-icon.png` | Tela inicial do iPhone |
+| `public/icon-512.png` | Tamanho grande, para perfis e divulgação |
+
+No painel, o símbolo é o componente `Simbolo` (`web/src/componentes/Simbolo.tsx`), com o
+mesmo desenho do `logo-*.svg` e a cor de `--brand`, e `Marca` põe o nome ao lado. O
+favicon, o de reserva e o do iPhone são cópias dos de `docs/site/public`, em `web/public`:
+quem trocar um troca o outro.
 
 ## Componentes base
 

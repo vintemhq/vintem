@@ -36,6 +36,6 @@ for (const [arquivo, slug] of paginas) {
   });
   const saida = join(destino, `${slug}.md`);
   mkdirSync(dirname(saida), { recursive: true });
-  writeFileSync(saida, `---\ntitle: ${JSON.stringify(titulo)}\neditUrl: https://github.com/vintemhq/vintem/edit/develop/${arquivo}\n---\n\n${texto}`);
+  writeFileSync(saida, `---\ntitle: ${JSON.stringify(titulo)}\n---\n\n${texto}`);
 }
 console.log(`${paginas.length} guias sincronizados`);

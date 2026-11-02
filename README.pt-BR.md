@@ -16,7 +16,7 @@ cuida dos certificados mTLS e normaliza os webhooks.
 
 </div>
 
-> 🚧 **Alpha.** O sandbox e o adapter da Efí funcionam; a API ainda pode mudar. Acompanhe pelo board.
+> 🚧 **Alpha.** O sandbox funciona, e o adapter da Efí já recebeu Pix de verdade. Os outros bancos ainda não foram testados contra o banco real, e a API ainda pode mudar. Acompanhe pelo board.
 
 ## Teste em 10 segundos
 
@@ -32,7 +32,7 @@ terminal: cinco segundos depois o "pagador" de mentira paga e a cobrança vira
 ## Use com seu agente
 
 `vintem mcp` é um servidor MCP para agentes de IA: cria, consulta, lista e
-cancela cobranças Pix, e devolve pagamentos. Ele fala com a API do Vintém usando
+cancela cobranças Pix, emite cobranças com vencimento, e devolve pagamentos. Ele fala com a API do Vintém usando
 uma API key, então os escopos da key valem: uma key só de leitura dá um agente
 que só consulta.
 
@@ -79,9 +79,9 @@ O Vintém é gratuito e não cobra nada por Pix. Você paga a tarifa de Pix do
 | [Stripe](https://stripe.com/br/pricing) (Pix, só por convite) | 1,19% | R$ 0,60 | R$ 5,95 |
 | [Mercado Pago](https://www.mercadopago.com.br/ferramentas-para-vender/check-out) (checkout, recebimento na hora) | 0,99% | R$ 0,50 | R$ 4,95 |
 | [Asaas](https://www.asaas.com/precos-e-taxas) | R$ 2,15 fixos (R$ 1,08 nos 3 primeiros meses) | R$ 2,15 | R$ 2,15 |
-| **Vintém + [Efí Empresas](https://sejaefi.com.br/tarifas)** | 1,19% (tarifa da Efí; o Vintém soma 0) | R$ 0,60 | R$ 5,95 |
+| **Vintém + [Efí](https://sejaefi.com.br/tarifas)** | 1,19% (tarifa da Efí; o Vintém soma 0) | R$ 0,60 | R$ 5,95 |
 
-<sub>Páginas de preço públicas, consultadas em 29/10/2026. A taxa negociada da sua conta pode ser outra.</sub>
+<sub>Páginas de preço públicas, consultadas em 29/10/2026. A taxa negociada da sua conta pode ser outra. No nosso teste com dinheiro real, numa conta Efí Pro, a Efí cobrou R$ 0,01 num Pix de R$ 1,00 e R$ 0,12 num de R$ 10,00.</sub>
 
 **Sem ilusão:** com a Efí, a taxa é a mesma da Stripe. O que você ganha hoje é
 ser dono do processo: seus dados, seus webhooks, nenhuma amarra e a liberdade
@@ -108,7 +108,7 @@ não achamos isso numa tabela oficial atual). Os do Sicoob, onde a tarifa de Pix
 | Banco | `--psp` | cob | cobv | Devolução | Webhook | Situação |
 |---|---|---|---|---|---|---|
 | Sandbox do Vintém | `sandbox` | ✅ | ✅ | ✅ | ✅ | Para testar sem conta PJ ([guia](./docs/SANDBOX.md)) |
-| Efí | `efi` | ✅ | ✅ | ✅ | ✅ | Testado na homologação da Efí (cobranças, pagamento, devolução); falta testar o cadastro do webhook ([guia](./docs/EFI.md)) |
+| Efí | `efi` | ✅ | ✅ | ✅ | ✅ | **Testado em produção** com dinheiro real: cobrança, webhook, conciliação e devolução; a `cobv` só na homologação ([guia](./docs/EFI.md)) |
 | Banco Inter | `inter` | ✅ | ✅ | ✅ | ✅ | Escrito pela documentação oficial do Inter; **ainda não testado no sandbox do Inter** ([guia](./docs/INTER.md)) |
 | Sicoob | `sicoob` | ✅ | ✅ | ✅ | ✅ | Escrito pela spec do BCB e por relatos públicos do sandbox; **ainda não testado com conta de cooperado** ([guia](./docs/SICOOB.md)) |
 | Banco do Brasil | `bb` | ✅ | ✅ | ✅ | ✅ | Escrito pela spec do BCB e por relatos públicos da homologação; **ainda não testado pelo Vintém na homologação do BB** ([guia](./docs/BB.md)) |

@@ -27,13 +27,13 @@ A porta 8080 do Vintém não é publicada: só o Caddy fala com ele.
 ## 2. A chave mestra e o `.env`
 
 ```bash
-docker run --rm ghcr.io/vintemhq/vintem:0.11.0 chave gerar
+docker run --rm ghcr.io/vintemhq/vintem:0.11.1 chave gerar
 ```
 
 Crie o `.env`, na mesma pasta, com a chave gerada:
 
 ```bash title=".env"
-VINTEM_VERSAO=0.11.0
+VINTEM_VERSAO=0.11.1
 VINTEM_DOMINIO=vintem.suaempresa.com
 VINTEM_MASTER_KEY=a-chave-gerada
 ```
@@ -55,7 +55,7 @@ curl https://vintem.suaempresa.com/health
 ```
 
 ```json
-{"status":"ok","version":"0.11.0"}
+{"status":"ok","version":"0.11.1"}
 ```
 
 ## 4. Cadastrar a conta

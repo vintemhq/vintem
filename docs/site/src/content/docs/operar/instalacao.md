@@ -16,7 +16,7 @@ Para só testar, sem conta no banco, veja [Do zero ao Pix pago](/comecar/quickst
 A imagem é multi-arch (amd64 e arm64) e roda sem root, com um binário só.
 
 ```bash
-docker run --rm ghcr.io/vintemhq/vintem:0.11.0 version
+docker run --rm ghcr.io/vintemhq/vintem:0.11.1 version
 ```
 
 Use sempre uma versão fixa. Para subir em produção, siga o [guia de produção](/operar/producao/).
@@ -27,7 +27,7 @@ Os [releases](https://github.com/vintemhq/vintem/releases) trazem binários para
 macOS e Windows, em amd64 e arm64, e um `checksums.txt`. Baixe e confira antes de usar:
 
 ```bash
-VERSAO=0.11.0
+VERSAO=0.11.1
 curl -LO https://github.com/vintemhq/vintem/releases/download/v$VERSAO/vintem_${VERSAO}_linux_amd64.tar.gz
 curl -LO https://github.com/vintemhq/vintem/releases/download/v$VERSAO/checksums.txt
 sha256sum -c --ignore-missing checksums.txt

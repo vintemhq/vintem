@@ -37,6 +37,46 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 30/10/2026 (fim da tarde) — v0.11.1: o primeiro Pix de verdade
+
+O primeiro teste com dinheiro real, numa conta Efí Pro (CPF): uma cobrança de R$ 1,00 e outra de
+R$ 10,00, pagas pelo Nubank, com o webhook, a conciliação e a devolução funcionando. Ele achou dois
+defeitos que a homologação e o Efí falso não pegavam, e os dois estão corrigidos neste release.
+
+| PR → `develop` | O que entrou | Release → `main` |
+|---|---|---|
+| [#168](https://github.com/vintemhq/vintem/pull/168) `22da710` | Devolução com descrição não é mais recusada pelo Efí | [v0.11.1](https://github.com/vintemhq/vintem/releases/tag/v0.11.1) · [#170](https://github.com/vintemhq/vintem/pull/170) `0e3b754` |
+| [#169](https://github.com/vintemhq/vintem/pull/169) `04027c5` | Webhook do Efí pode ser registrado em produção | [v0.11.1](https://github.com/vintemhq/vintem/releases/tag/v0.11.1) · [#170](https://github.com/vintemhq/vintem/pull/170) `0e3b754` |
+
+> Release [v0.11.1](https://github.com/vintemhq/vintem/releases/tag/v0.11.1) com binários, checksums e imagem `ghcr.io/vintemhq/vintem:0.11.1`, que respondeu `0.11.1`. O teste
+> com o banco real rodou com o binário da branch do [#169](https://github.com/vintemhq/vintem/pull/169), no mesmo código.
+
+### O webhook nunca teria funcionado
+
+O Efí chama a URL durante o registro, e o Vintém só gravava o token depois de o banco responder. A
+chamada recebia 401, e o registro falhava sempre. A homologação não pegou porque o webhook ficou
+sem testar por falta de URL pública, e o Efí falso não chama a URL. O teste passou a reproduzir o
+banco fazendo essa chamada.
+
+### Como provar que foi o webhook
+
+A consulta da cobrança pergunta ao banco, então um `CONCLUIDA` sozinho não prova nada. A prova foi a
+ordem: não consultar antes, rodar `vintem conciliar` e ver `0 Pix recuperados`. No primeiro Pix, sem
+webhook, a mesma conciliação tinha recuperado 1.
+
+### A tarifa muda o que dá para devolver
+
+O Efí cobrou R$ 0,01 num Pix de R$ 1,00 e R$ 0,12 num de R$ 10,00, cerca de 1,2%, e nada na devolução.
+Por isso, devolver o valor integral de um Pix sem outro saldo na conta termina em `NAO_REALIZADO`, sem
+motivo. Isso não é defeito do Vintém, mas quem integra precisa saber.
+
+### Ficou aberto
+
+- Cobrança com vencimento (`cobv`) só foi testada na homologação.
+- O túnel temporário do teste não serve para produção, e a rede da UFLA bloqueia a porta dele.
+
+---
+
 ## Leva de 30/10/2026 (tarde) — v0.11.0: o que a documentação mostrou que faltava
 
 Escrever e testar as seções Conceitos e Operar mostrou problemas no produto, e esta leva os

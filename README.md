@@ -16,7 +16,7 @@ handles the mTLS certificates and normalizes webhooks.
 
 </div>
 
-> 🚧 **Alpha.** The sandbox and the Efí adapter work; the API may still change. Watch the repo or follow the board.
+> 🚧 **Alpha.** The sandbox works, and the Efí adapter has received real Pix payments. The other banks are not yet tested against the real bank, and the API may still change. Watch the repo or follow the board.
 
 ## Try it in 10 seconds
 
@@ -32,7 +32,7 @@ See [the sandbox guide (pt-BR)](./docs/SANDBOX.md) for magic values.
 ## Use it from your agent
 
 `vintem mcp` is an MCP server for AI agents: create, check, list and cancel Pix
-charges, and refund payments. It talks to the Vintém API with an API key, so the
+charges, issue charges with a due date, and refund payments. It talks to the Vintém API with an API key, so the
 key's scopes apply — a read-only key gives you an agent that can only look.
 
 ```bash
@@ -78,7 +78,7 @@ that is the whole bill. How much you save depends on the bank:
 | [Stripe](https://stripe.com/br/pricing) (Pix, invite only) | 1.19% | R$ 0.60 | R$ 5.95 |
 | [Mercado Pago](https://www.mercadopago.com.br/ferramentas-para-vender/check-out) (checkout, paid instantly) | 0.99% | R$ 0.50 | R$ 4.95 |
 | [Asaas](https://www.asaas.com/precos-e-taxas) | R$ 2.15 flat (R$ 1.08 for the first 3 months) | R$ 2.15 | R$ 2.15 |
-| **Vintém + [Efí Empresas](https://sejaefi.com.br/tarifas)** | 1.19% (Efí's fee; Vintém adds 0) | R$ 0.60 | R$ 5.95 |
+| **Vintém + [Efí](https://sejaefi.com.br/tarifas)** | 1.19% (Efí's fee; Vintém adds 0) | R$ 0.60 | R$ 5.95 |
 
 <sub>Public price pages, checked on 29/10/2026. Your negotiated rate may differ.</sub>
 
@@ -108,7 +108,7 @@ do Brasil.
 | Bank | `--psp` | cob | cobv | Refund | Webhook | Status |
 |---|---|---|---|---|---|---|
 | Vintém sandbox | `sandbox` | ✅ | ✅ | ✅ | ✅ | For testing without a business account ([guide, pt-BR](./docs/SANDBOX.md)) |
-| Efí | `efi` | ✅ | ✅ | ✅ | ✅ | Tested against Efí's homologation (charges, payment, refund); webhook registration still untested ([guide, pt-BR](./docs/EFI.md)) |
+| Efí | `efi` | ✅ | ✅ | ✅ | ✅ | **Tested in production** with real money: charge, webhook, reconciliation and refund; `cobv` only against homologation ([guide, pt-BR](./docs/EFI.md)) |
 | Banco Inter | `inter` | ✅ | ✅ | ✅ | ✅ | Written from Inter's official API spec; **not yet tested against Inter's sandbox** ([guide, pt-BR](./docs/INTER.md)) |
 | Sicoob | `sicoob` | ✅ | ✅ | ✅ | ✅ | Written from the BCB spec and public sandbox reports; **not yet tested with a member account** ([guide, pt-BR](./docs/SICOOB.md)) |
 | Banco do Brasil | `bb` | ✅ | ✅ | ✅ | ✅ | Written from the BCB spec and public homologation reports; **not yet tested by Vintém against BB's homologation** ([guide, pt-BR](./docs/BB.md)) |

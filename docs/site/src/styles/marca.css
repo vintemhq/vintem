@@ -1,11 +1,193 @@
-/* Ouro do design system (docs/DESIGN-SYSTEM.md), nos tons que passam AA. */
+/* Identidade do Vintém no site: os tokens de docs/DESIGN-SYSTEM.md sobre as
+   variáveis do Starlight. Solidez e calma; ouro é acento da marca. */
 :root {
+  --sl-font: "Inter Variable", system-ui, sans-serif;
+  --sl-font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
   --sl-color-accent-low: #3b2c05;
   --sl-color-accent: #d4a017;
   --sl-color-accent-high: #f3dc9a;
+  --sl-color-text-accent: #d4a017;
+  --sl-color-text-invert: #0b1120;
+  --sl-color-white: #f1f5f9;
+  --sl-color-gray-1: #e2e8f0;
+  --sl-color-gray-2: #cbd5e1;
+  --sl-color-gray-3: #94a3b8;
+  --sl-color-gray-4: #64748b;
+  --sl-color-gray-5: #1e293b;
+  --sl-color-gray-6: #0f172a;
+  --sl-color-black: #0b1120;
+  --sl-color-bg-nav: #0f172a;
+  --sl-color-bg-sidebar: #0b1120;
+  --sl-color-hairline: #1e293b;
+  --sl-color-hairline-light: #1e293b;
+  --sl-color-hairline-shade: #0b1120;
 }
 :root[data-theme="light"] {
   --sl-color-accent-low: #f6ecd2;
   --sl-color-accent: #946c08;
   --sl-color-accent-high: #4a3604;
+  --sl-color-text-accent: #946c08;
+  --sl-color-text-invert: #ffffff;
+  --sl-color-white: #0f172a;
+  --sl-color-gray-1: #1e293b;
+  --sl-color-gray-2: #334155;
+  --sl-color-gray-3: #475569;
+  --sl-color-gray-4: #64748b;
+  --sl-color-gray-5: #e2e8f0;
+  --sl-color-gray-6: #f8fafc;
+  --sl-color-gray-7: #f8fafc;
+  --sl-color-black: #ffffff;
+  --sl-color-bg-nav: #f8fafc;
+  --sl-color-bg-sidebar: #ffffff;
+  --sl-color-hairline: #e2e8f0;
+  --sl-color-hairline-light: #e2e8f0;
+  --sl-color-hairline-shade: #e2e8f0;
+}
+
+/* Foco sempre visível, em ouro, nos dois temas. */
+:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* O nome fica neutro, e o ouro fica para o símbolo. */
+.site-title {
+  color: var(--sl-color-white);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.site-title img {
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.sl-markdown-content h2,
+.sl-markdown-content h3 {
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* Valores de dinheiro alinham pelos algarismos. */
+.sl-markdown-content table {
+  font-variant-numeric: tabular-nums;
+}
+/* Código longo quebra dentro da célula: a tabela cabe na tela do celular. */
+.sl-markdown-content table code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+/* Abertura da home: texto à esquerda e a moeda cunhada ao lado. */
+.hero {
+  padding-block: 0.5rem 1.5rem;
+}
+.hero .stack,
+.hero .copy {
+  text-align: start;
+  align-items: flex-start;
+}
+.hero .actions {
+  justify-content: flex-start;
+}
+.hero h1 {
+  letter-spacing: -0.03em;
+}
+.hero > img {
+  width: min(42%, 9rem);
+  margin-inline: 0;
+  grid-row: 1;
+}
+@media (min-width: 50rem) {
+  .hero {
+    grid-template-columns: 1fr auto;
+    gap: 2.5rem;
+  }
+  .hero > img {
+    grid-row: auto;
+    grid-column: 2;
+    width: 13rem;
+  }
+}
+
+/* A demonstração reserva o próprio espaço, para a página não pular ao carregar. */
+.sl-markdown-content img.demo {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--sl-color-gray-5);
+}
+
+/* Cards com borda e sem sombra, com o ícone na cor da marca. */
+.sl-markdown-content .card {
+  background-color: transparent;
+  border-radius: 8px;
+}
+.sl-markdown-content .card .title {
+  font-size: var(--sl-text-xl);
+}
+.sl-markdown-content .card .icon {
+  --sl-card-border: transparent;
+  --sl-card-bg: transparent;
+  color: var(--sl-color-text-accent);
+  padding: 0;
+}
+
+.sl-link-card {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Aba na borda do menu lateral, no meio da altura, só no computador. A seta aponta
+   para onde o menu vai: para dentro com ele aberto, e para fora com ele escondido. */
+.alternar-menu {
+  display: none;
+}
+@media (min-width: 50rem) {
+  /* A margem do conteúdo deixa espaço para a aba, para ela nunca cobrir o texto. */
+  :root {
+    --sl-content-pad-x: 1.75rem;
+  }
+  .alternar-menu {
+    position: fixed;
+    top: calc(50% + var(--sl-nav-height) / 2);
+    left: var(--sl-sidebar-width);
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 3.5rem;
+    padding: 0;
+    border: 1px solid var(--sl-color-gray-5);
+    border-inline-start: 0;
+    border-radius: 0 8px 8px 0;
+    background-color: var(--sl-color-bg-nav);
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+  }
+  .alternar-menu:hover {
+    color: var(--sl-color-text-accent);
+  }
+  .alternar-menu svg {
+    transition: transform 150ms ease-out;
+  }
+  :root[data-menu-oculto] .alternar-menu {
+    left: 0;
+  }
+  :root[data-menu-oculto] .alternar-menu svg {
+    transform: rotate(180deg);
+  }
+  :root[data-has-sidebar][data-menu-oculto] {
+    --sl-content-inline-start: 0rem;
+  }
+  :root[data-menu-oculto] .sidebar-pane {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .alternar-menu svg {
+    transition: none;
+  }
 }
