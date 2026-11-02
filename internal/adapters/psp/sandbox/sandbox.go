@@ -399,6 +399,17 @@ func (p *PSP) ConfigurarWebhook(_ context.Context, conta domain.Conta, url strin
 	return nil
 }
 
+// RemoverWebhook esquece a URL; sem URL guardada, ErrNaoEncontrado, como o banco.
+func (p *PSP) RemoverWebhook(_ context.Context, conta domain.Conta) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if _, ok := p.webhooks[conta.ID]; !ok {
+		return fmt.Errorf("webhook da conta %s: %w", conta.ID, ports.ErrNaoEncontrado)
+	}
+	delete(p.webhooks, conta.ID)
+	return nil
+}
+
 // InterpretarWebhook lê o callback no formato da spec do BCB.
 func (p *PSP) InterpretarWebhook(conta domain.Conta, corpo []byte) ([]domain.PixRecebido, error) {
 	return psp.WebhookPixBCB(conta, corpo)

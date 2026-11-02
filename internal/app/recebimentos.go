@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/vintemhq/vintem/internal/domain"
@@ -118,4 +119,72 @@ func (s Recebimentos) DaCobranca(ctx context.Context, contaID string, txid domai
 		}
 	}
 	return out, nil
+}
+
+// ConsultaPix são os filtros do GET /pix, com a paginação por página da spec.
+type ConsultaPix struct {
+	Inicio, Fim       time.Time
+	Txid              domain.Txid
+	TxidPresente      *bool
+	DevolucaoPresente *bool
+	// Documento é o CPF ou CNPJ do pagador.
+	Documento   string
+	Pagina      int
+	ItensPagina int
+}
+
+// PaginaPix é o resultado de Listar.
+type PaginaPix struct {
+	Pix          []domain.PixRecebido
+	Pagina       int
+	ItensPagina  int
+	TotalPaginas int
+	TotalItens   int
+}
+
+// Listar devolve uma página dos Pix recebidos em [Inicio, Fim), pelo horário
+// do Pix, cada um com as devoluções gravadas. Uma API key de uma conta só vê
+// os Pix dela.
+func (s Recebimentos) Listar(ctx context.Context, q ConsultaPix) (PaginaPix, error) {
+	janela := ConsultaCobs{Inicio: q.Inicio, Fim: q.Fim, Pagina: q.Pagina, ItensPagina: q.ItensPagina}
+	if err := validarConsulta(&janela); err != nil {
+		return PaginaPix{}, err
+	}
+	q.ItensPagina = janela.ItensPagina
+	f := ports.FiltroPix{
+		ContaID: AcessoDe(ctx).ContaID, Janela: ports.Janela{Inicio: q.Inicio, Fim: q.Fim}, Txid: q.Txid,
+		TxidPresente: q.TxidPresente, DevolucaoPresente: q.DevolucaoPresente, Documento: q.Documento,
+	}
+	total, err := s.Store.Pix().Contar(ctx, f)
+	if err != nil {
+		return PaginaPix{}, err
+	}
+	f.Limite, f.Pular = q.ItensPagina, q.Pagina*q.ItensPagina
+	pixes, err := s.Store.Pix().Listar(ctx, f)
+	if err != nil {
+		return PaginaPix{}, err
+	}
+	for i := range pixes {
+		if pixes[i].Devolucoes, err = s.Store.Devolucoes().DoPix(ctx, pixes[i].EndToEndID); err != nil {
+			return PaginaPix{}, err
+		}
+	}
+	return PaginaPix{Pix: pixes, Pagina: q.Pagina, ItensPagina: q.ItensPagina, TotalPaginas: totalPaginas(total, q.ItensPagina), TotalItens: total}, nil
+}
+
+// Consultar devolve o Pix pelo endToEndId, com as devoluções gravadas. Pix de
+// outra conta responde como inexistente, para a key não saber que ele existe.
+func (s Recebimentos) Consultar(ctx context.Context, e2e string) (domain.PixRecebido, error) {
+	if err := domain.ValidarEndToEndID(e2e); err != nil {
+		return domain.PixRecebido{}, &ErroValidacao{Violacoes: []Violacao{{Propriedade: "e2eid", Razao: err.Error(), Valor: e2e}}}
+	}
+	p, err := s.Store.Pix().BuscarPorE2E(ctx, e2e)
+	if err != nil {
+		return domain.PixRecebido{}, err
+	}
+	if !AcessoDe(ctx).enxerga(p.ContaID) {
+		return domain.PixRecebido{}, fmt.Errorf("pix %s: %w", e2e, ports.ErrNaoEncontrado)
+	}
+	p.Devolucoes, err = s.Store.Devolucoes().DoPix(ctx, e2e)
+	return p, err
 }

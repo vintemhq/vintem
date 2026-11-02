@@ -74,6 +74,16 @@ Nesse modo, o Efí pede que você garanta de outro jeito que o aviso veio dele:
 Se o webhook falhar ou sumir, a **conciliação** busca os Pix em `GET /v2/pix` a
 cada 5 minutos (RN-31). Nenhum pagamento depende só do aviso.
 
+**Para cancelar,** por exemplo depois de um teste com túnel temporário:
+
+```sh
+vintem conta webhook minha-loja --remover
+```
+
+O Vintém chama `DELETE /v2/webhook/:chave` e invalida a URL. Antes dele, o webhook
+só saía pela API do Efí: quem já tinha excluído a aplicação precisava criar outra
+para isso. Faça antes de excluir a aplicação no Efí.
+
 ## 4. Testar na homologação
 
 - **Só cobranças de R$ 0,01 a R$ 10,00 são confirmadas e geram webhook.** Acima

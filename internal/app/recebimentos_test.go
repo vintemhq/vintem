@@ -12,6 +12,7 @@ import (
 	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
 	"github.com/vintemhq/vintem/internal/app"
 	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 func pixDe(e2e, txid string, valor domain.Money) domain.PixRecebido {
@@ -174,5 +175,59 @@ func TestWebhookValeDuranteORegistroNoBanco(t *testing.T) {
 	}
 	if _, err := wh.Receber(ctx, "loja", token, []byte(`{"pix":[]}`)); errors.Is(err, domain.ErrNaoAutenticado) {
 		t.Fatalf("o token anterior deixou de valer depois da recusa: %v", err)
+	}
+}
+
+// bancoQueFalhaAoRemover recusa o DELETE do webhook, como um banco fora do ar.
+type bancoQueFalhaAoRemover struct {
+	*sandbox.PSP
+	falha error
+}
+
+func (b *bancoQueFalhaAoRemover) RemoverWebhook(ctx context.Context, conta domain.Conta) error {
+	if b.falha != nil {
+		return b.falha
+	}
+	return b.PSP.RemoverWebhook(ctx, conta)
+}
+
+// TestWebhookRemover (#178): cancela no banco e invalida o token; com o banco
+// falhando, o token continua valendo.
+func TestWebhookRemover(t *testing.T) {
+	c := novoCenario(t)
+	ctx := context.Background()
+	banco := &bancoQueFalhaAoRemover{PSP: sandbox.New(c.clock)}
+	wh := app.Webhooks{Store: c.store, PSPs: psp.NewRegistry(banco), Recebimentos: app.Recebimentos{Store: c.store, Clock: c.clock}}
+	endereco, err := wh.Configurar(ctx, "loja", "https://vintem.example.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := endereco[strings.LastIndex(endereco, "/")+1:]
+	vale := func() bool {
+		_, err := wh.Receber(ctx, "loja", token, []byte(`{"pix":[]}`))
+		return !errors.Is(err, domain.ErrNaoAutenticado)
+	}
+
+	banco.falha = errors.New("banco fora do ar")
+	if _, err := wh.Remover(ctx, "loja"); err == nil || !errors.Is(err, app.ErrPSP) {
+		t.Fatalf("banco falhando: err = %v", err)
+	}
+	if !vale() {
+		t.Fatal("o banco falhou, e o token deixou de valer")
+	}
+
+	banco.falha = nil
+	if registrado, err := wh.Remover(ctx, "loja"); err != nil || !registrado {
+		t.Fatalf("Remover = %v, %v", registrado, err)
+	}
+	if vale() {
+		t.Fatal("o token continuou valendo depois de remover")
+	}
+	// Sem nada no banco, remover de novo não é erro.
+	if registrado, err := wh.Remover(ctx, "loja"); err != nil || registrado {
+		t.Fatalf("remover de novo = %v, %v", registrado, err)
+	}
+	if _, err := wh.Remover(ctx, "nada"); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("conta inexistente: err = %v", err)
 	}
 }

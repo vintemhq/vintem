@@ -66,6 +66,9 @@ type PSP interface {
 	// /pix/{e2eid}/devolucao/{id}); inexistente é ErrNaoEncontrado.
 	ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error)
 	ConfigurarWebhook(ctx context.Context, conta domain.Conta, url string) error
+	// RemoverWebhook cancela o aviso de Pix registrado na chave da conta
+	// (DELETE /webhook/{chave}). Sem webhook registrado, ErrNaoEncontrado.
+	RemoverWebhook(ctx context.Context, conta domain.Conta) error
 	// InterpretarWebhook lê o corpo que o PSP enviou ao webhook. Quem segue a
 	// spec usa psp.WebhookPixBCB; quem desvia trata o desvio aqui.
 	InterpretarWebhook(conta domain.Conta, corpo []byte) ([]domain.PixRecebido, error)

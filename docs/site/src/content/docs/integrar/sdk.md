@@ -25,7 +25,7 @@ console.log(cob.txid, cob.status, cob.pixCopiaECola);
 ```
 
 `vintem.cob`, `vintem.cobv` e `vintem.devolucao` cobrem criar, consultar,
-listar, revisar e cancelar. Erro da API vira `VintemError`, com `status` e o
+listar, revisar e cancelar, e `vintem.pix` lista e consulta os Pix recebidos. Erro da API vira `VintemError`, com `status` e o
 `problema` no formato da spec do BCB.
 
 ## Verificar um webhook
