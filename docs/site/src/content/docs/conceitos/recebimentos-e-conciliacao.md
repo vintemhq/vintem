@@ -22,6 +22,9 @@ https://vintem.suaempresa.com/webhooks/pix/{conta}/{token}
   o comando de novo troca o token.
 - **A rota não usa API key,** porque quem chama é o banco. Token ausente ou errado
   responde **401** [`NaoAutenticado`](/erros/naoautenticado/), sem dizer o que houve.
+- **Para cancelar,** rode `vintem conta webhook minha-loja --remover`. O aviso sai do
+  banco e a URL deixa de valer. Faça isso depois de um teste, para a chave Pix não
+  ficar apontando para uma URL morta. Se o banco falhar, nada muda aqui.
 - **O banco acrescenta `/pix` à URL,** como manda a spec. Os dois caminhos são aceitos.
 - **Um item inválido recusa o lote inteiro,** com **400**
   [`WebhookInvalido`](/erros/webhookinvalido/). É melhor o banco reenviar do que um

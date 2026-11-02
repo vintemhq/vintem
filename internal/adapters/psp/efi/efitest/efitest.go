@@ -510,6 +510,13 @@ func (s *Servidor) webhook(w http.ResponseWriter, r *http.Request, chave string)
 			return
 		}
 		responder(w, http.StatusOK, map[string]string{"webhookUrl": u, "chave": chave})
+	case http.MethodDelete:
+		if _, ok := s.webhooks[chave]; !ok {
+			erro(w, http.StatusNotFound, "webhook_nao_encontrado", "Nenhum webhook encontrado para a chave informada")
+			return
+		}
+		delete(s.webhooks, chave)
+		w.WriteHeader(http.StatusNoContent)
 	default:
 		erro(w, http.StatusMethodNotAllowed, "metodo", "método não suportado")
 	}

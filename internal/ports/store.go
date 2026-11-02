@@ -99,7 +99,8 @@ type ContaRepo interface {
 	MarcarVencimentoAvisado(ctx context.Context, contaID, impressaoDigital string) error
 	// BuscarCredenciais devolve o blob cifrado, ou ErrNaoEncontrado se a conta não tiver credenciais.
 	BuscarCredenciais(ctx context.Context, contaID string) ([]byte, error)
-	// SalvarTokenWebhook grava o hash do token da URL de webhook da conta.
+	// SalvarTokenWebhook grava o hash do token da URL de webhook da conta. Hash
+	// nil apaga o token: o BuscarTokenWebhook volta a dar ErrNaoEncontrado.
 	SalvarTokenWebhook(ctx context.Context, contaID string, hash []byte) error
 	// BuscarTokenWebhook devolve o hash, ou ErrNaoEncontrado se a conta não tiver webhook configurado.
 	BuscarTokenWebhook(ctx context.Context, contaID string) ([]byte, error)

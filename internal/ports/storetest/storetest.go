@@ -493,6 +493,13 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		if err := s.Contas().SalvarTokenWebhook(ctx, "nada", []byte{1}); !errors.Is(err, ports.ErrNaoEncontrado) {
 			t.Fatalf("conta inexistente: err = %v", err)
 		}
+		// Hash nil apaga o token (webhook removido, #178).
+		if err := s.Contas().SalvarTokenWebhook(ctx, "c1", nil); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.Contas().BuscarTokenWebhook(ctx, "c1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("depois de apagar: err = %v", err)
+		}
 	})
 
 	t.Run("outbox: distribui cada evento uma vez, em ordem", func(t *testing.T) {
