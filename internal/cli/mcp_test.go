@@ -198,3 +198,32 @@ func TestMCPSemChaveNemTokenExplicaOQueFalta(t *testing.T) {
 		t.Fatalf("sem token: %v", err)
 	}
 }
+
+// TestMCPListarCobrancasSemPeriodoUsaAsUltimas24Horas (#119): sem inicio e fim,
+// o agente vê o que entrou nas últimas 24 h; com só um dos dois, a ferramenta
+// explica o que falta sem chamar a API.
+func TestMCPListarCobrancasSemPeriodoUsaAsUltimas24Horas(t *testing.T) {
+	dir := t.TempDir()
+	relogio := fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
+	url, token, parar := subirSandbox(t, filepath.Join(dir, "vintem-sandbox.db"), relogio)
+	defer parar()
+	cs := conectarMCP(t, mcp.API{URL: url, Token: token, ChavePix: "sandbox@vintem.dev", Agora: relogio.Now})
+
+	texto, _ := ferramenta(t, cs, "criar_cobranca", map[string]any{"valor": "30.00"})
+	antiga := jsonDe(t, texto)["txid"].(string)
+	relogio.Avancar(25 * time.Hour)
+	texto, _ = ferramenta(t, cs, "criar_cobranca", map[string]any{"valor": "31.00"})
+	nova := jsonDe(t, texto)["txid"].(string)
+	relogio.Avancar(time.Minute) // o relógio falso não anda sozinho
+
+	texto, erro := ferramenta(t, cs, "listar_cobrancas", map[string]any{})
+	if erro || !strings.Contains(texto, nova) || strings.Contains(texto, antiga) {
+		t.Fatalf("listar_cobrancas sem período: %s", texto)
+	}
+	for _, args := range []map[string]any{{"inicio": "2026-10-29T00:00:00Z"}, {"fim": "2026-10-31T00:00:00Z"}} {
+		texto, erro := ferramenta(t, cs, "listar_cobrancas", args)
+		if !erro || !strings.Contains(texto, "inicio e fim juntos") || strings.Contains(texto, "o Vintém respondeu") {
+			t.Errorf("%v: erro=%v %s", args, erro, texto)
+		}
+	}
+}

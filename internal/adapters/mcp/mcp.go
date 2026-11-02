@@ -26,12 +26,20 @@ type API struct {
 	// ChavePix é a chave usada quando o agente não informa outra.
 	ChavePix string
 	HTTP     *http.Client
+	// Agora dá a hora usada no período padrão de listar_cobrancas; nil usa time.Now.
+	Agora func() time.Time
 }
+
+// periodoPadrao é o que listar_cobrancas lista quando o agente não dá o período.
+const periodoPadrao = 24 * time.Hour
 
 // NovoServidor monta o servidor MCP com as ferramentas de cobrança e devolução.
 func NovoServidor(api API, versao string) *sdk.Server {
 	if api.HTTP == nil {
 		api.HTTP = &http.Client{Timeout: 30 * time.Second}
+	}
+	if api.Agora == nil {
+		api.Agora = time.Now
 	}
 	api.URL = strings.TrimRight(api.URL, "/")
 	s := sdk.NewServer(&sdk.Implementation{Name: "vintem", Title: "Vintém: Pix sem gateway", Version: versao}, &sdk.ServerOptions{
@@ -77,10 +85,21 @@ func NovoServidor(api API, versao string) *sdk.Server {
 	})
 
 	sdk.AddTool(s, &sdk.Tool{
-		Name:        "listar_cobrancas",
-		Description: "Lista as cobranças Pix imediatas criadas num período, opcionalmente por status.",
+		Name: "listar_cobrancas",
+		Description: "Lista as cobranças Pix imediatas criadas num período, opcionalmente por status. " +
+			"Sem inicio e fim, lista as das últimas 24 horas; para outro período, informe os dois.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in ListarCobrancas) (*sdk.CallToolResult, any, error) {
-		q := url.Values{"inicio": {in.Inicio}, "fim": {in.Fim}}
+		inicio, fim := in.Inicio, in.Fim
+		switch {
+		case inicio == "" && fim == "":
+			agora := api.Agora()
+			inicio, fim = agora.Add(-periodoPadrao).Format(time.RFC3339), agora.Format(time.RFC3339)
+		case inicio == "":
+			return erroParaAgente("falta inicio: informe inicio e fim juntos (RFC 3339), ou nenhum dos dois para as últimas 24 horas"), nil, nil
+		case fim == "":
+			return erroParaAgente("falta fim: informe inicio e fim juntos (RFC 3339), ou nenhum dos dois para as últimas 24 horas"), nil, nil
+		}
+		q := url.Values{"inicio": {inicio}, "fim": {fim}}
 		if in.Status != "" {
 			q.Set("status", in.Status)
 		}
@@ -132,8 +151,8 @@ type (
 	}
 	// ListarCobrancas é a entrada de listar_cobrancas.
 	ListarCobrancas struct {
-		Inicio string `json:"inicio" jsonschema:"início do período, RFC 3339 (ex. 2026-10-29T00:00:00-03:00)"`
-		Fim    string `json:"fim" jsonschema:"fim do período, RFC 3339"`
+		Inicio string `json:"inicio,omitempty" jsonschema:"início do período, RFC 3339 (ex. 2026-10-29T00:00:00-03:00); sem inicio e fim, lista as últimas 24 horas"`
+		Fim    string `json:"fim,omitempty" jsonschema:"fim do período, RFC 3339; informe junto com inicio"`
 		Status string `json:"status,omitempty" jsonschema:"filtra por status: ATIVA, CONCLUIDA, REMOVIDA_PELO_USUARIO_RECEBEDOR ou REMOVIDA_PELO_PSP"`
 	}
 	// Devolver é a entrada de devolver_pix.

@@ -36,3 +36,6 @@ Rode `vintem mcp` por stdio com estas variáveis:
 | `cancelar_cobranca` | `cob:write` |
 | `devolver_pix` | `devolucao:write` |
 | `consultar_devolucao` | `pix:read` |
+
+Sem `inicio` e `fim`, `listar_cobrancas` lista as cobranças das últimas 24 horas. Para
+outro período, informe os dois em RFC 3339.
