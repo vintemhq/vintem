@@ -33,7 +33,7 @@ a [configuração](/operar/configuracao/).
 | `vintem conta criar` | Cadastra uma conta recebedora |
 | `vintem conta listar` | Lista as contas, com a validade do certificado |
 | `vintem conta desativar <id>` | Impede novas cobranças na conta |
-| `vintem conta webhook <id>` | Gera a URL de aviso de Pix e a registra no banco. Rodar de novo troca o token |
+| `vintem conta webhook <id>` | Gera a URL de aviso de Pix e a registra no banco. Rodar de novo troca o token. Com `--remover`, cancela |
 
 Flags de `vintem conta criar`:
 
@@ -50,11 +50,12 @@ Flags de `vintem conta criar`:
 | `--senha-certificado-arquivo` | Arquivo com a senha do certificado |
 | `--chave-aplicacao` | Chave de aplicação do portal do BB (`gw-dev-app-key`); só para o `bb` |
 
-Flag de `vintem conta webhook`:
+Flags de `vintem conta webhook`:
 
 | Flag | O que é |
 |---|---|
 | `--url-publica` | Endereço público deste Vintém, como `https://vintem.suaempresa.com` |
+| `--remover` | Cancela o aviso registrado no banco e invalida a URL. Use depois de um teste, para a chave Pix não ficar apontando para uma URL morta. Se o banco falhar, a URL continua valendo |
 
 ## API keys
 
@@ -88,6 +89,23 @@ Flags de `vintem destino criar`:
 |---|---|
 | `--url` | URL da sua aplicação que recebe os eventos |
 | `--conta` | Só os eventos desta conta. Sem ela, todas |
+
+## Saída em JSON
+
+Os quatro comandos `listar` (`conta`, `apikey`, `destino` e `dlq`) aceitam `--json` e
+imprimem um array JSON com os mesmos campos da tabela, para scripts e agentes:
+
+| Flag | O que é |
+|---|---|
+| `--json` | Imprime um array JSON em vez da tabela. Nenhum segredo aparece: nem o token da API key, nem as credenciais da conta, nem o segredo do destino |
+
+```bash
+vintem conta listar --json | jq -r '.[] | select(.ativa) | .id'
+```
+
+Os campos seguem o estilo da API (`chavePix`, `contaId`, `criadaEm`). Datas e horas
+saem em RFC 3339; `contaId` vazio quer dizer todas as contas, e `revogadaEm` e
+`certificadoValidade` saem `null` quando não se aplicam.
 
 ## Conciliação
 

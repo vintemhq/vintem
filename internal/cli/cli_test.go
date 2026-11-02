@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
 	"github.com/vintemhq/vintem/internal/platform/vault"
 	"github.com/vintemhq/vintem/internal/ports"
 	"github.com/vintemhq/vintem/internal/ports/fake"
@@ -349,5 +350,29 @@ func TestBancoDoLastroNaoViraBancoVazio(t *testing.T) {
 	}
 	if err := Run(ctx, []string{"conta", "listar"}, amb); err != nil {
 		t.Fatalf("depois de renomear: %v", err)
+	}
+}
+
+// TestContaWebhookRemover (#178): registra e cancela pela CLI, contra o sandbox.
+func TestContaWebhookRemover(t *testing.T) {
+	amb, out := ambiente(t, envComBanco(t))
+	amb.PSPs = psp.NewRegistry(sandbox.New(fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))))
+	ctx := context.Background()
+	if err := Run(ctx, []string{"conta", "criar", "--id", "loja", "--nome", "Loja", "--psp", "sandbox", "--chave", "loja@exemplo.com"}, amb); err != nil {
+		t.Fatal(err)
+	}
+	if err := Run(ctx, []string{"conta", "webhook", "loja", "--url-publica", "https://vintem.example.com", "--remover"}, amb); err == nil || !strings.Contains(err.Error(), "não os dois") {
+		t.Fatalf("as duas flags: %v", err)
+	}
+	if err := Run(ctx, []string{"conta", "webhook", "loja", "--url-publica", "https://vintem.example.com"}, amb); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	if err := Run(ctx, []string{"conta", "webhook", "loja", "--remover"}, amb); err != nil || !strings.Contains(out.String(), "cancelado no PSP") {
+		t.Fatalf("remover: %v\n%s", err, out)
+	}
+	out.Reset()
+	if err := Run(ctx, []string{"conta", "webhook", "loja", "--remover"}, amb); err != nil || !strings.Contains(out.String(), "não tinha webhook") {
+		t.Fatalf("remover de novo: %v\n%s", err, out)
 	}
 }

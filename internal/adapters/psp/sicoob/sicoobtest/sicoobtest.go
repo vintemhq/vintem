@@ -187,6 +187,14 @@ func (s *Servidor) servir(w http.ResponseWriter, r *http.Request) {
 		}
 		s.webhooks[strings.TrimPrefix(caminho, "/webhook/")] = url
 		w.WriteHeader(http.StatusNoContent)
+	case strings.HasPrefix(caminho, "/webhook/") && r.Method == http.MethodDelete:
+		chave := strings.TrimPrefix(caminho, "/webhook/")
+		if _, ok := s.webhooks[chave]; !ok {
+			problema(w, http.StatusNotFound, "NaoEncontrado", "nenhum webhook na chave")
+			return
+		}
+		delete(s.webhooks, chave)
+		w.WriteHeader(http.StatusNoContent)
 	default:
 		problema(w, http.StatusNotFound, "NaoEncontrado", "rota não existe no Sicoob falso")
 	}

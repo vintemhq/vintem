@@ -345,6 +345,11 @@ Valores de partida, do *Guia de implementação do Pix Automático* v1.3
   de valer). O token faz parte da URL: trate a URL como segredo. Ele é gravado
   **antes** de falar com o banco, porque o Efí chama a URL durante o registro; se o
   banco recusar, o token anterior volta a valer.
+- `vintem conta webhook <id> --remover` cancela o aviso no banco
+  (`DELETE /webhook/{chave}`) e só então apaga o token, o que invalida as URLs de
+  Pix, recorrência e cobrança recorrente da conta. Se o banco falhar, o token
+  continua valendo, porque a URL ainda está registrada lá. Banco sem webhook na
+  chave conta como já removido.
 - A spec do BCB manda o banco acrescentar `/pix` à URL: os dois caminhos são aceitos.
 - A rota não exige API key (quem chama é o banco). Token ausente, errado ou fora
   do formato responde **401**, sem dizer qual dos três.
@@ -361,6 +366,13 @@ Valores de partida, do *Guia de implementação do Pix Automático* v1.3
   ainda conclui, mas o evento `pix.recebido` sai com `divergente: true`. Pix sem
   txid, ou com txid de outra conta, é registrado sem concluir nada.
 - Corpo acima de 1 MiB é recusado em qualquer rota.
+- Os Pix gravados saem pelas rotas da spec: `GET /pix` (janela `[inicio, fim)`
+  pelo horário do Pix, com os filtros `txid`, `txIdPresente`, `devolucaoPresente`,
+  `cpf` e `cnpj` do pagador, e a paginação da spec) e `GET /pix/{e2eid}`, os dois
+  com escopo `pix:read` e com as devoluções de cada Pix. São os Pix que o Vintém
+  conhece, não uma consulta ao banco: um Pix ainda não avisado nem conciliado não
+  aparece. API key restrita a uma conta só vê os Pix dela; Pix de outra conta
+  responde 404.
 
 ### RN-31 · Conciliação
 

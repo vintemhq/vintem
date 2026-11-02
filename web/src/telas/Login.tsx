@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api, ErroAPI, sessao } from "../api";
 import { Button } from "../componentes/Button";
+import { Marca } from "../componentes/Simbolo";
 
 export function Login({ aoEntrar }: { aoEntrar: () => void }) {
   const [token, setToken] = useState("");
@@ -26,7 +27,7 @@ export function Login({ aoEntrar }: { aoEntrar: () => void }) {
           }
         }}
       >
-        <h1 style={{ margin: 0 }}><span style={{ color: "var(--brand)" }}>◆</span> Vintém</h1>
+        <h1 style={{ margin: 0 }}><Marca tamanho={32} /></h1>
         <p className="muted" style={{ margin: 0 }}>Entre com uma API key. O painel só mostra o que os escopos dela permitem.</p>
         <label htmlFor="token" style={{ fontWeight: 600 }}>API key</label>
         <input

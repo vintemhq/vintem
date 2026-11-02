@@ -30,6 +30,10 @@ func (soCob) ConfigurarWebhook(context.Context, domain.Conta, string) error {
 	return ports.ErrNaoSuportado
 }
 
+func (soCob) RemoverWebhook(context.Context, domain.Conta) error {
+	return ports.ErrNaoSuportado
+}
+
 // A suíte pula só o que o adapter não declara: um adapter que só faz cob passa
 // inteiro, com os cenários de cob rodando.
 func TestAdapterSoComCobPassa(t *testing.T) {
