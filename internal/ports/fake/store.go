@@ -247,6 +247,10 @@ func (r contas) SalvarTokenWebhook(_ context.Context, id string, hash []byte) er
 	if _, ok := r.s.d.contas[id]; !ok {
 		return fmt.Errorf("conta %s: %w", id, ports.ErrNaoEncontrado)
 	}
+	if hash == nil {
+		delete(r.s.d.tokens, id)
+		return nil
+	}
 	r.s.d.tokens[id] = slices.Clone(hash)
 	return nil
 }

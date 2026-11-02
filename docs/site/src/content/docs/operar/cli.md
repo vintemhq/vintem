@@ -33,7 +33,7 @@ a [configuração](/operar/configuracao/).
 | `vintem conta criar` | Cadastra uma conta recebedora |
 | `vintem conta listar` | Lista as contas, com a validade do certificado |
 | `vintem conta desativar <id>` | Impede novas cobranças na conta |
-| `vintem conta webhook <id>` | Gera a URL de aviso de Pix e a registra no banco. Rodar de novo troca o token |
+| `vintem conta webhook <id>` | Gera a URL de aviso de Pix e a registra no banco. Rodar de novo troca o token. Com `--remover`, cancela |
 
 Flags de `vintem conta criar`:
 
@@ -50,11 +50,12 @@ Flags de `vintem conta criar`:
 | `--senha-certificado-arquivo` | Arquivo com a senha do certificado |
 | `--chave-aplicacao` | Chave de aplicação do portal do BB (`gw-dev-app-key`); só para o `bb` |
 
-Flag de `vintem conta webhook`:
+Flags de `vintem conta webhook`:
 
 | Flag | O que é |
 |---|---|
 | `--url-publica` | Endereço público deste Vintém, como `https://vintem.suaempresa.com` |
+| `--remover` | Cancela o aviso registrado no banco e invalida a URL. Use depois de um teste, para a chave Pix não ficar apontando para uma URL morta. Se o banco falhar, a URL continua valendo |
 
 ## API keys
 

@@ -64,6 +64,7 @@ const uso = `uso: vintem <comando>
   conta desativar <id>           impede novas cobranças na conta
   conta webhook <id> --url-publica https://...
                                  gera a URL de aviso de Pix e registra no banco
+  conta webhook <id> --remover   cancela o aviso no banco e invalida a URL
   conciliar                      roda a conciliação uma vez (GET /pix de cada conta)
   destino criar --url URL [--conta ID]
                                  cadastra onde entregar os eventos (sem --conta: todas)
@@ -295,15 +296,31 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 		fs := flag.NewFlagSet("conta webhook", flag.ContinueOnError)
 		fs.SetOutput(amb.Saida)
 		urlPublica := fs.String("url-publica", "", "endereço público deste Vintém (https://vintem.suaempresa.com)")
+		remover := fs.Bool("remover", false, "cancela o aviso registrado no banco e invalida a URL")
 		if len(args) < 2 || strings.HasPrefix(args[1], "-") {
-			return errors.New("use: vintem conta webhook <id> --url-publica URL")
+			return errors.New("use: vintem conta webhook <id> --url-publica URL (ou --remover)")
 		}
 		if err := fs.Parse(args[2:]); err != nil {
 			return err
 		}
+		if *remover && *urlPublica != "" {
+			return errors.New("use --url-publica para registrar ou --remover para cancelar, não os dois")
+		}
 		wh := app.Webhooks{Store: contas.Store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock},
 			Recorrencias:         app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock},
 			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}}
+		if *remover {
+			registrado, err := wh.Remover(ctx, args[1])
+			if err != nil {
+				return err
+			}
+			msg := "webhook da conta %s cancelado no PSP e URL invalidada: avisos para ela agora respondem 401.\n"
+			if !registrado {
+				msg = "o PSP não tinha webhook registrado na chave da conta %s; a URL local foi invalidada.\n"
+			}
+			_, err = fmt.Fprintf(amb.Saida, msg, args[1])
+			return err
+		}
 		endereco, err := wh.Configurar(ctx, args[1], *urlPublica)
 		if err != nil {
 			return err

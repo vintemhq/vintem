@@ -345,6 +345,11 @@ Valores de partida, do *Guia de implementação do Pix Automático* v1.3
   de valer). O token faz parte da URL: trate a URL como segredo. Ele é gravado
   **antes** de falar com o banco, porque o Efí chama a URL durante o registro; se o
   banco recusar, o token anterior volta a valer.
+- `vintem conta webhook <id> --remover` cancela o aviso no banco
+  (`DELETE /webhook/{chave}`) e só então apaga o token, o que invalida as URLs de
+  Pix, recorrência e cobrança recorrente da conta. Se o banco falhar, o token
+  continua valendo, porque a URL ainda está registrada lá. Banco sem webhook na
+  chave conta como já removido.
 - A spec do BCB manda o banco acrescentar `/pix` à URL: os dois caminhos são aceitos.
 - A rota não exige API key (quem chama é o banco). Token ausente, errado ou fora
   do formato responde **401**, sem dizer qual dos três.

@@ -83,6 +83,33 @@ func (s Webhooks) Configurar(ctx context.Context, contaID, urlPublica string) (s
 	return endereco, nil
 }
 
+// Remover cancela o aviso de Pix registrado no banco e só então apaga o token
+// local, o que invalida as URLs de Pix, recorrência e cobrança recorrente da
+// conta. Se o banco falhar, o token continua valendo: a URL ainda está
+// registrada lá, e os avisos seguem chegando. Banco sem webhook na chave conta
+// como já removido, e o token é apagado do mesmo jeito; registrado diz se havia
+// algo para cancelar no banco.
+func (s Webhooks) Remover(ctx context.Context, contaID string) (registrado bool, err error) {
+	conta, err := s.Store.Contas().Buscar(ctx, contaID)
+	if err != nil {
+		return false, err
+	}
+	psp, err := pspDe(s.PSPs, conta, ports.CapWebhook)
+	if err != nil {
+		return false, err
+	}
+	registrado = true
+	if err := psp.RemoverWebhook(ctx, conta); errors.Is(err, ports.ErrNaoEncontrado) {
+		registrado = false
+	} else if err != nil {
+		return false, erroDoPSP(err)
+	}
+	if err := s.Store.Contas().SalvarTokenWebhook(ctx, conta.ID, nil); err != nil {
+		return registrado, fmt.Errorf("o webhook saiu do banco, mas o token local não foi apagado; rode de novo: %w", err)
+	}
+	return registrado, nil
+}
+
 // contaDoToken confere o token da URL do webhook e devolve a conta. Token
 // ausente ou errado é ErrNaoAutenticado, sem dizer qual dos dois.
 func (s Webhooks) contaDoToken(ctx context.Context, contaID, token string) (domain.Conta, error) {
