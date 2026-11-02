@@ -90,6 +90,23 @@ Flags de `vintem destino criar`:
 | `--url` | URL da sua aplicação que recebe os eventos |
 | `--conta` | Só os eventos desta conta. Sem ela, todas |
 
+## Saída em JSON
+
+Os quatro comandos `listar` (`conta`, `apikey`, `destino` e `dlq`) aceitam `--json` e
+imprimem um array JSON com os mesmos campos da tabela, para scripts e agentes:
+
+| Flag | O que é |
+|---|---|
+| `--json` | Imprime um array JSON em vez da tabela. Nenhum segredo aparece: nem o token da API key, nem as credenciais da conta, nem o segredo do destino |
+
+```bash
+vintem conta listar --json | jq -r '.[] | select(.ativa) | .id'
+```
+
+Os campos seguem o estilo da API (`chavePix`, `contaId`, `criadaEm`). Datas e horas
+saem em RFC 3339; `contaId` vazio quer dizer todas as contas, e `revogadaEm` e
+`certificadoValidade` saem `null` quando não se aplicam.
+
 ## Conciliação
 
 | Comando | O que faz |

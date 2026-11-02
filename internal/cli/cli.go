@@ -60,7 +60,7 @@ const uso = `uso: vintem <comando>
   chave trocar                   recifra tudo com a chave de VINTEM_MASTER_KEY_NOVA
                                  (pare o serve antes)
   conta criar  [flags]           cadastra uma conta recebedora
-  conta listar                   lista as contas
+  conta listar [--json]          lista as contas
   conta desativar <id>           impede novas cobranças na conta
   conta webhook <id> --url-publica https://...
                                  gera a URL de aviso de Pix e registra no banco
@@ -68,13 +68,13 @@ const uso = `uso: vintem <comando>
   conciliar                      roda a conciliação uma vez (GET /pix de cada conta)
   destino criar --url URL [--conta ID]
                                  cadastra onde entregar os eventos (sem --conta: todas)
-  destino listar                 lista os destinos
+  destino listar [--json]        lista os destinos
   destino remover <id>           remove um destino
-  dlq listar                     lista as entregas que desistiram depois de 24 h
+  dlq listar [--json]            lista as entregas que desistiram depois de 24 h
   dlq reenviar <evento-id>       devolve as entregas do evento à fila
   apikey criar --nome N --escopo E [--escopo E...] [--conta ID]
                                  cria uma API key (o token aparece uma vez só)
-  apikey listar                  lista as API keys
+  apikey listar [--json]         lista as API keys
   apikey revogar <id>            revoga uma API key na hora
 
 escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
@@ -262,9 +262,25 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 	case "criar":
 		return contaCriar(ctx, contas, args[1:], amb)
 	case "listar":
+		emJSON, err := flagJSON("conta listar", args[1:], amb)
+		if err != nil {
+			return err
+		}
 		lista, err := contas.Listar(ctx)
 		if err != nil {
 			return err
+		}
+		if emJSON {
+			itens := make([]contaJSON, 0, len(lista))
+			for _, c := range lista {
+				item := contaJSON{ID: c.ID, Nome: c.Nome, PSP: c.PSP, ChavePix: c.ChavePix, Ambiente: string(c.Ambiente), Ativa: c.Ativa}
+				if c.Certificado != nil {
+					validade := c.Certificado.Validade.Format(time.DateOnly)
+					item.CertificadoValidade = &validade
+				}
+				itens = append(itens, item)
+			}
+			return imprimirJSON(amb, itens)
 		}
 		tw := tabwriter.NewWriter(amb.Saida, 0, 4, 2, ' ', 0)
 		_, _ = fmt.Fprintln(tw, "ID\tNOME\tPSP\tCHAVE\tAMBIENTE\tATIVA\tCERTIFICADO VALE ATÉ")
@@ -551,9 +567,20 @@ func apikey(ctx context.Context, args []string, amb Ambiente) error {
 		_, err = fmt.Fprintf(amb.Saida, "api key %s criada com %v\n\n  %s\n\nGuarde agora: este token não aparece de novo.\n", k.ID, k.Escopos, token)
 		return err
 	case "listar":
+		emJSON, err := flagJSON("apikey listar", args[1:], amb)
+		if err != nil {
+			return err
+		}
 		lista, err := keys.Listar(ctx)
 		if err != nil {
 			return err
+		}
+		if emJSON {
+			itens := make([]apikeyJSON, 0, len(lista))
+			for _, k := range lista {
+				itens = append(itens, apikeyJSON{ID: k.ID, Nome: k.Nome, ContaID: k.ContaID, Escopos: k.Escopos, CriadaEm: k.CriadaEm, RevogadaEm: k.RevogadaEm})
+			}
+			return imprimirJSON(amb, itens)
 		}
 		tw := tabwriter.NewWriter(amb.Saida, 0, 4, 2, ' ', 0)
 		_, _ = fmt.Fprintln(tw, "ID\tNOME\tCONTA\tESCOPOS\tCRIADA\tREVOGADA")
@@ -655,9 +682,20 @@ func destino(ctx context.Context, args []string, amb Ambiente) error {
 		_, err = fmt.Fprintf(amb.Saida, "destino %s criado para %s\n\n  segredo: %s\n\nConfigure o segredo na sua aplicação para verificar a assinatura (Standard Webhooks).\nGuarde agora: ele não aparece de novo.\n", d.ID, d.URL, whsec)
 		return err
 	case "listar":
+		emJSON, err := flagJSON("destino listar", args[1:], amb)
+		if err != nil {
+			return err
+		}
 		lista, err := contas.Store.Destinos().Listar(ctx)
 		if err != nil {
 			return err
+		}
+		if emJSON {
+			itens := make([]destinoJSON, 0, len(lista))
+			for _, d := range lista {
+				itens = append(itens, destinoJSON{ID: d.ID, ContaID: d.ContaID, URL: d.URL, CriadoEm: d.CriadoEm})
+			}
+			return imprimirJSON(amb, itens)
 		}
 		tw := tabwriter.NewWriter(amb.Saida, 0, 4, 2, ' ', 0)
 		_, _ = fmt.Fprintln(tw, "ID\tCONTA\tURL\tCRIADO")
@@ -695,9 +733,20 @@ func dlq(ctx context.Context, args []string, amb Ambiente) error {
 	saida := app.Saida{Store: contas.Store, Vault: contas.Vault, Clock: amb.Clock}
 	switch args[0] {
 	case "listar":
+		emJSON, err := flagJSON("dlq listar", args[1:], amb)
+		if err != nil {
+			return err
+		}
 		lista, err := saida.DLQ(ctx, 200)
 		if err != nil {
 			return err
+		}
+		if emJSON {
+			itens := make([]dlqJSON, 0, len(lista))
+			for _, e := range lista {
+				itens = append(itens, dlqJSON{EventoID: e.EventoID, Tipo: e.Tipo, DestinoID: e.DestinoID, Tentativas: e.Tentativas, UltimoErro: e.UltimoErro, CriadaEm: e.CriadaEm})
+			}
+			return imprimirJSON(amb, itens)
 		}
 		tw := tabwriter.NewWriter(amb.Saida, 0, 4, 2, ' ', 0)
 		_, _ = fmt.Fprintln(tw, "EVENTO\tTIPO\tDESTINO\tTENTATIVAS\tÚLTIMO ERRO\tEVENTO EM")

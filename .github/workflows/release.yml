@@ -8,6 +8,10 @@ permissions:
   contents: write  # criar o release e subir os binários
   packages: write  # publicar a imagem no ghcr.io
 
+env:
+  # Cache travado desiste em 2 minutos em vez de 10 (#180).
+  SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
+
 jobs:
   release:
     name: Release

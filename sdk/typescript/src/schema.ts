@@ -249,6 +249,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar Pix recebidos
+         * @description Lista os Pix gravados no Vintém com horário em [inicio, fim), cada um com as devoluções. Uma API key restrita a uma conta só vê os Pix dela.
+         */
+        get: operations["listarPix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pix/{e2eid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                e2eid: components["parameters"]["E2eidPath"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Consultar Pix recebido
+         * @description Devolve o Pix gravado no Vintém, com as devoluções.
+         */
+        get: operations["consultarPix"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pix/{e2eid}/devolucao/{id}": {
         parameters: {
             query?: never;
@@ -964,6 +1006,24 @@ export interface components {
             /** Format: date-time */
             horario: string;
             infoPagador?: string;
+            /** @description Devoluções do Pix. Só vem no GET /pix e no GET /pix/{e2eid}. */
+            devolucoes?: components["schemas"]["Devolucao"][];
+        };
+        PixConsultados: {
+            parametros: components["schemas"]["ParametrosConsultaPix"];
+            pix: components["schemas"]["Pix"][];
+        };
+        ParametrosConsultaPix: {
+            /** Format: date-time */
+            inicio: string;
+            /** Format: date-time */
+            fim: string;
+            txid?: components["schemas"]["Txid"];
+            txIdPresente?: boolean;
+            devolucaoPresente?: boolean;
+            cpf?: components["schemas"]["Cpf"];
+            cnpj?: components["schemas"]["Cnpj"];
+            paginacao: components["schemas"]["Paginacao"];
         };
         ParametrosConsulta: {
             /** Format: date-time */
@@ -1706,6 +1766,68 @@ export interface operations {
             400: components["responses"]["RequisicaoInvalida"];
             401: components["responses"]["NaoAutenticado"];
             403: components["responses"]["AcessoNegado"];
+            default: components["responses"]["Erro"];
+        };
+    };
+    listarPix: {
+        parameters: {
+            query: {
+                inicio: components["parameters"]["Inicio"];
+                fim: components["parameters"]["Fim"];
+                txid?: components["schemas"]["Txid"];
+                /** @description true só Pix de cobrança; false só Pix sem txid (chave ou QR estático). */
+                txIdPresente?: boolean;
+                /** @description true só Pix com devolução; false só Pix sem devolução. */
+                devolucaoPresente?: boolean;
+                cpf?: components["parameters"]["CpfFiltro"];
+                cnpj?: components["parameters"]["CnpjFiltro"];
+                "paginacao.paginaAtual"?: components["parameters"]["PaginaAtual"];
+                "paginacao.itensPorPagina"?: components["parameters"]["ItensPorPagina"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de Pix recebidos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PixConsultados"];
+                };
+            };
+            400: components["responses"]["RequisicaoInvalida"];
+            401: components["responses"]["NaoAutenticado"];
+            403: components["responses"]["AcessoNegado"];
+            default: components["responses"]["Erro"];
+        };
+    };
+    consultarPix: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                e2eid: components["parameters"]["E2eidPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pix recebido. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pix"];
+                };
+            };
+            401: components["responses"]["NaoAutenticado"];
+            403: components["responses"]["AcessoNegado"];
+            404: components["responses"]["NaoEncontrado"];
             default: components["responses"]["Erro"];
         };
     };

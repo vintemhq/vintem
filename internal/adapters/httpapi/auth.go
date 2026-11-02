@@ -36,6 +36,8 @@ var escopoDaRota = map[string]domain.Escopo{
 	"GET /cobr/{txid}":                      domain.EscopoCobrRead,
 	"PATCH /cobr/{txid}":                    domain.EscopoCobrWrite,
 	"POST /cobr/{txid}/retentativa/{data}":  domain.EscopoCobrWrite,
+	"GET /pix":                              domain.EscopoPixRead,
+	"GET /pix/{e2eid}":                      domain.EscopoPixRead,
 	"PUT /pix/{e2eid}/devolucao/{id}":       domain.EscopoDevolucaoWrite,
 	"GET /pix/{e2eid}/devolucao/{id}":       domain.EscopoPixRead,
 	"GET /vintem/v1/webhooks/entregas":      domain.EscopoWebhookAdmin,

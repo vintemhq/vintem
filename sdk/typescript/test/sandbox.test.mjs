@@ -14,6 +14,14 @@ test("o exemplo do README cria uma cobrança", { skip: pular }, async () => {
   assert.match(stdout, /^\w{26,35} ATIVA 0002/);
 });
 
+test("lista e consulta Pix recebidos", { skip: pular }, async () => {
+  const lista = await vintem.pix.listar({ inicio: new Date(Date.now() - 86_400_000).toISOString(), fim: new Date(Date.now() + 60_000).toISOString() });
+  assert.ok(Array.isArray(lista.pix));
+  assert.equal(lista.parametros.paginacao.itensPorPagina, 100);
+  for (const p of lista.pix) assert.equal((await vintem.pix.consultar(p.endToEndId)).endToEndId, p.endToEndId);
+  await assert.rejects(vintem.pix.consultar("E00000000202610291200naoexiste01"), (e) => e instanceof VintemError && e.status === 404);
+});
+
 test("cria, consulta, lista e cancela", { skip: pular }, async () => {
   const inicio = new Date(Date.now() - 60_000).toISOString();
   const cob = await vintem.cob.criar({ calendario: { expiracao: 3600 }, valor: { original: "15.00" }, chave: "sandbox@vintem.dev" }, { idempotencyKey: "sdk-" + Date.now() });

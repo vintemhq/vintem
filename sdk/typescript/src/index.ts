@@ -15,6 +15,7 @@ type Consulta<O extends keyof operations> = operations[O] extends { parameters: 
 export type Cobranca = Schemas["CobCompleta"];
 export type CobrancaVencimento = Schemas["CobVCompleta"];
 export type Devolucao = Schemas["Devolucao"];
+export type Pix = Schemas["Pix"];
 export type Problema = Schemas["Problema"];
 
 export interface OpcoesVintem {
@@ -76,6 +77,12 @@ export class Vintem {
     listar: (filtro: Consulta<"listarCobvs">) => this.chamar<Resposta<"listarCobvs", 200>>("GET", "/cobv" + query(filtro)),
     revisar: (txid: string, corpo: Corpo<"revisarCobv">) =>
       this.chamar<Resposta<"revisarCobv", 200>>("PATCH", `/cobv/${encodeURIComponent(txid)}`, corpo),
+  };
+
+  /** Pix recebidos, como o Vintém os gravou (pelo webhook do banco ou pela conciliação), com as devoluções. */
+  readonly pix = {
+    consultar: (endToEndId: string) => this.chamar<Resposta<"consultarPix", 200>>("GET", `/pix/${encodeURIComponent(endToEndId)}`),
+    listar: (filtro: Consulta<"listarPix">) => this.chamar<Resposta<"listarPix", 200>>("GET", "/pix" + query(filtro)),
   };
 
   /** Devolução de um Pix recebido. O id identifica a devolução: repetir o mesmo id não devolve duas vezes. */
