@@ -5,8 +5,10 @@ package storetest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -476,6 +478,73 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 		if _, err := s.Pix().BuscarPorE2E(ctx, "Enadanadanadanadanadanadanadanad"); !errors.Is(err, ports.ErrNaoEncontrado) {
 			t.Fatalf("inexistente: err = %v", err)
+		}
+	})
+
+	t.Run("pix: lista com os filtros do GET /pix, em ordem de horário", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		sim, nao := true, false
+		pix := func(e2e, conta string, txid domain.Txid, minuto int, doc string) domain.PixRecebido {
+			p := domain.PixRecebido{EndToEndID: e2e, ContaID: conta, Txid: txid, Valor: 1000, Chave: conta + "@example.com", Horario: base.Add(time.Duration(minuto) * time.Minute)}
+			if doc != "" {
+				p.Pagador = &domain.Devedor{Documento: doc, Nome: "Fulano"}
+			}
+			return p
+		}
+		todos := []domain.PixRecebido{
+			pix("E12345678202610291200listapix0003", "c1", "txid00000000000000000000001", 3, "12345678909"),
+			pix("E12345678202610291200listapix0001", "c1", "", 1, ""),
+			pix("E12345678202610291200listapix0002", "c1", "txid00000000000000000000002", 2, "11222333000181"),
+			pix("E12345678202610291200listapix0004", "c2", "txid00000000000000000000003", 4, ""),
+			// Mesmo horário: desempata pelo endToEndId.
+			pix("E12345678202610291200listapix0000", "c1", "", 3, ""),
+		}
+		for _, p := range todos {
+			if _, err := s.Pix().Registrar(ctx, p); err != nil {
+				t.Fatal(err)
+			}
+		}
+		d := domain.Devolucao{ID: "dev1", EndToEndID: "E12345678202610291200listapix0002", ContaID: "c1", Valor: 500, Natureza: domain.DevolucaoOriginal, Status: domain.DevolucaoEmProcessamento, CriadaEm: base}
+		if err := s.Devolucoes().Criar(ctx, d); err != nil {
+			t.Fatal(err)
+		}
+		e2es := func(f ports.FiltroPix) string {
+			t.Helper()
+			lista, err := s.Pix().Listar(ctx, f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			n, err := s.Pix().Contar(ctx, ports.FiltroPix{ContaID: f.ContaID, Janela: f.Janela, Txid: f.Txid, TxidPresente: f.TxidPresente, DevolucaoPresente: f.DevolucaoPresente, Documento: f.Documento})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var ids []string
+			for _, p := range lista {
+				ids = append(ids, p.EndToEndID[len(p.EndToEndID)-4:])
+			}
+			return fmt.Sprintf("%s/%d", strings.Join(ids, ","), n)
+		}
+		casos := []struct {
+			nome string
+			f    ports.FiltroPix
+			quer string // fim do endToEndId de cada Pix da página / total sem paginação
+		}{
+			{"todos", ports.FiltroPix{}, "0001,0002,0000,0003,0004/5"},
+			{"conta", ports.FiltroPix{ContaID: "c1"}, "0001,0002,0000,0003/4"},
+			{"janela [inicio, fim)", ports.FiltroPix{Janela: ports.Janela{Inicio: base.Add(2 * time.Minute), Fim: base.Add(4 * time.Minute)}}, "0002,0000,0003/3"},
+			{"txid", ports.FiltroPix{Txid: "txid00000000000000000000001"}, "0003/1"},
+			{"com txid", ports.FiltroPix{ContaID: "c1", TxidPresente: &sim}, "0002,0003/2"},
+			{"sem txid", ports.FiltroPix{TxidPresente: &nao}, "0001,0000/2"},
+			{"com devolução", ports.FiltroPix{DevolucaoPresente: &sim}, "0002/1"},
+			{"sem devolução", ports.FiltroPix{ContaID: "c1", DevolucaoPresente: &nao}, "0001,0000,0003/3"},
+			{"documento do pagador", ports.FiltroPix{Documento: "12345678909"}, "0003/1"},
+			{"página", ports.FiltroPix{Limite: 2, Pular: 1}, "0002,0000/5"},
+			{"depois do fim", ports.FiltroPix{Pular: 10}, "/5"},
+		}
+		for _, c := range casos {
+			if got := e2es(c.f); got != c.quer {
+				t.Errorf("%s: %s, quer %s", c.nome, got, c.quer)
+			}
 		}
 	})
 
