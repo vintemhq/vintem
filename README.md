@@ -32,7 +32,7 @@ See [the sandbox guide (pt-BR)](./docs/SANDBOX.md) for magic values.
 ## Use it from your agent
 
 `vintem mcp` is an MCP server for AI agents: create, check, list and cancel Pix
-charges, and refund payments. It talks to the Vintém API with an API key, so the
+charges, issue charges with a due date, and refund payments. It talks to the Vintém API with an API key, so the
 key's scopes apply — a read-only key gives you an agent that can only look.
 
 ```bash
