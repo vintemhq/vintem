@@ -77,4 +77,21 @@ Além dos Pix, a mesma rodada consulta no banco:
 
 No sandbox, a conciliação roda a cada 10 segundos, e é ela que encontra os pagamentos.
 
+## Consultar os Pix recebidos
+
+Os Pix que o Vintém gravou saem pelas mesmas rotas da spec do BCB, com o escopo `pix:read`:
+
+```bash
+curl "http://localhost:8080/pix?inicio=2026-11-01T00:00:00Z&fim=2026-11-02T00:00:00Z" \
+  -H "Authorization: Bearer vtm_..."
+curl http://localhost:8080/pix/E00000000202611021130NCMDKVJFYNX -H "Authorization: Bearer vtm_..."
+```
+
+- **A janela é pelo horário do Pix,** e não pela criação da cobrança.
+- **Filtros:** `txid`, `txIdPresente` (só Pix de cobrança, ou só os sem), `devolucaoPresente`,
+  e `cpf` ou `cnpj` do pagador. A paginação é a mesma do `GET /cob`.
+- **Cada Pix vem com as devoluções,** em `devolucoes`.
+- **É o que o Vintém conhece,** não uma consulta ao banco: um Pix que ainda não foi
+  avisado nem conciliado não aparece. Rode `vintem conciliar` se precisar dele agora.
+
 As regras completas são a [RN-30 e a RN-31](/gerado/regras-de-negocio/).

@@ -31,6 +31,111 @@ func (q *Queries) BuscarPixPorE2E(ctx context.Context, endToEndID string) (PixRe
 	return i, err
 }
 
+const contarPix = `-- name: ContarPix :one
+SELECT COUNT(*) FROM pix_recebidos
+WHERE (?1 IS NULL OR conta_id = ?1)
+  AND (?2 IS NULL OR horario >= ?2)
+  AND (?3 IS NULL OR horario < ?3)
+  AND (?4 IS NULL OR txid = ?4)
+  AND (?5 IS NULL OR (txid <> '') = ?5)
+  AND (?6 IS NULL OR EXISTS (SELECT 1 FROM devolucoes d WHERE d.end_to_end_id = pix_recebidos.end_to_end_id) = ?6)
+  AND (?7 IS NULL OR pagador_documento = ?7)
+`
+
+type ContarPixParams struct {
+	ContaID           interface{}
+	Inicio            interface{}
+	Fim               interface{}
+	Txid              interface{}
+	TxidPresente      interface{}
+	DevolucaoPresente interface{}
+	Documento         interface{}
+}
+
+func (q *Queries) ContarPix(ctx context.Context, arg ContarPixParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, contarPix,
+		arg.ContaID,
+		arg.Inicio,
+		arg.Fim,
+		arg.Txid,
+		arg.TxidPresente,
+		arg.DevolucaoPresente,
+		arg.Documento,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const listarPix = `-- name: ListarPix :many
+SELECT end_to_end_id, conta_id, txid, valor, chave, horario, info_pagador, pagador_documento, pagador_nome FROM pix_recebidos
+WHERE (?1 IS NULL OR conta_id = ?1)
+  AND (?2 IS NULL OR horario >= ?2)
+  AND (?3 IS NULL OR horario < ?3)
+  AND (?4 IS NULL OR txid = ?4)
+  AND (?5 IS NULL OR (txid <> '') = ?5)
+  AND (?6 IS NULL OR EXISTS (SELECT 1 FROM devolucoes d WHERE d.end_to_end_id = pix_recebidos.end_to_end_id) = ?6)
+  AND (?7 IS NULL OR pagador_documento = ?7)
+ORDER BY horario, end_to_end_id
+LIMIT ?9 OFFSET ?8
+`
+
+type ListarPixParams struct {
+	ContaID           interface{}
+	Inicio            interface{}
+	Fim               interface{}
+	Txid              interface{}
+	TxidPresente      interface{}
+	DevolucaoPresente interface{}
+	Documento         interface{}
+	Pular             int64
+	Limite            int64
+}
+
+// Os filtros do GET /pix; NULL desliga o filtro.
+func (q *Queries) ListarPix(ctx context.Context, arg ListarPixParams) ([]PixRecebido, error) {
+	rows, err := q.db.QueryContext(ctx, listarPix,
+		arg.ContaID,
+		arg.Inicio,
+		arg.Fim,
+		arg.Txid,
+		arg.TxidPresente,
+		arg.DevolucaoPresente,
+		arg.Documento,
+		arg.Pular,
+		arg.Limite,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PixRecebido
+	for rows.Next() {
+		var i PixRecebido
+		if err := rows.Scan(
+			&i.EndToEndID,
+			&i.ContaID,
+			&i.Txid,
+			&i.Valor,
+			&i.Chave,
+			&i.Horario,
+			&i.InfoPagador,
+			&i.PagadorDocumento,
+			&i.PagadorNome,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listarPixPorTxid = `-- name: ListarPixPorTxid :many
 SELECT end_to_end_id, conta_id, txid, valor, chave, horario, info_pagador, pagador_documento, pagador_nome FROM pix_recebidos WHERE txid = ? ORDER BY horario, end_to_end_id
 `
