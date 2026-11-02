@@ -80,7 +80,7 @@ func TestMCPCobraConsultaEDevolve(t *testing.T) {
 	for _, f := range lista.Tools {
 		nomes = append(nomes, f.Name)
 	}
-	if got := strings.Join(nomes, ","); got != "cancelar_cobranca,consultar_cobranca,consultar_devolucao,criar_cobranca,devolver_pix,listar_cobrancas" {
+	if got := strings.Join(nomes, ","); got != "cancelar_cobranca,consultar_cobranca,consultar_cobranca_vencimento,consultar_devolucao,criar_cobranca,criar_cobranca_vencimento,devolver_pix,listar_cobrancas" {
 		t.Fatalf("ferramentas: %s", got)
 	}
 
@@ -196,5 +196,78 @@ func TestMCPSemChaveNemTokenExplicaOQueFalta(t *testing.T) {
 	amb, _ := ambiente(t, map[string]string{})
 	if err := Run(context.Background(), []string{"mcp"}, amb); err == nil || !strings.Contains(err.Error(), "VINTEM_TOKEN") {
 		t.Fatalf("sem token: %v", err)
+	}
+}
+
+// TestMCPListarCobrancasSemPeriodoUsaAsUltimas24Horas (#119): sem inicio e fim,
+// o agente vê o que entrou nas últimas 24 h; com só um dos dois, a ferramenta
+// explica o que falta sem chamar a API.
+func TestMCPListarCobrancasSemPeriodoUsaAsUltimas24Horas(t *testing.T) {
+	dir := t.TempDir()
+	relogio := fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
+	url, token, parar := subirSandbox(t, filepath.Join(dir, "vintem-sandbox.db"), relogio)
+	defer parar()
+	cs := conectarMCP(t, mcp.API{URL: url, Token: token, ChavePix: "sandbox@vintem.dev", Agora: relogio.Now})
+
+	texto, _ := ferramenta(t, cs, "criar_cobranca", map[string]any{"valor": "30.00"})
+	antiga := jsonDe(t, texto)["txid"].(string)
+	relogio.Avancar(25 * time.Hour)
+	texto, _ = ferramenta(t, cs, "criar_cobranca", map[string]any{"valor": "31.00"})
+	nova := jsonDe(t, texto)["txid"].(string)
+	relogio.Avancar(time.Minute) // o relógio falso não anda sozinho
+
+	texto, erro := ferramenta(t, cs, "listar_cobrancas", map[string]any{})
+	if erro || !strings.Contains(texto, nova) || strings.Contains(texto, antiga) {
+		t.Fatalf("listar_cobrancas sem período: %s", texto)
+	}
+	for _, args := range []map[string]any{{"inicio": "2026-10-29T00:00:00Z"}, {"fim": "2026-10-31T00:00:00Z"}} {
+		texto, erro := ferramenta(t, cs, "listar_cobrancas", args)
+		if !erro || !strings.Contains(texto, "inicio e fim juntos") || strings.Contains(texto, "o Vintém respondeu") {
+			t.Errorf("%v: erro=%v %s", args, erro, texto)
+		}
+	}
+}
+
+// TestMCPCobrancaComVencimento (#114): o agente emite o "boleto do Pix" e o
+// consulta pelo txid, gerado quando ele não informa um.
+func TestMCPCobrancaComVencimento(t *testing.T) {
+	dir := t.TempDir()
+	relogio := fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
+	url, token, parar := subirSandbox(t, filepath.Join(dir, "vintem-sandbox.db"), relogio)
+	defer parar()
+	cs := conectarMCP(t, mcp.API{URL: url, Token: token, ChavePix: "sandbox@vintem.dev"})
+
+	texto, erro := ferramenta(t, cs, "criar_cobranca_vencimento", map[string]any{
+		"valor": "120.00", "vencimento": "2026-11-30", "devedor_nome": "Fulano de Tal", "devedor_documento": "12345678909",
+		"validade_apos_vencimento": 10, "multa_percentual": "2.00", "juros_percentual_mes": "1.00", "descricao": "Mensalidade de novembro",
+	})
+	cobv := jsonDe(t, texto)
+	txid, _ := cobv["txid"].(string)
+	if erro || cobv["status"] != "ATIVA" || len(txid) < 26 || cobv["pixCopiaECola"] == "" {
+		t.Fatalf("criar_cobranca_vencimento: %s", texto)
+	}
+	calendario, _ := cobv["calendario"].(map[string]any)
+	valor, _ := cobv["valor"].(map[string]any)
+	if calendario["dataDeVencimento"] != "2026-11-30" || calendario["validadeAposVencimento"] != float64(10) || valor["multa"] == nil || valor["juros"] == nil {
+		t.Fatalf("campos da cobv: %s", texto)
+	}
+
+	texto, erro = ferramenta(t, cs, "consultar_cobranca_vencimento", map[string]any{"txid": txid})
+	if erro || jsonDe(t, texto)["txid"] != txid || !strings.Contains(texto, "Fulano de Tal") {
+		t.Fatalf("consultar_cobranca_vencimento: %s", texto)
+	}
+
+	// Com o txid informado, tentar de novo devolve a mesma cobrança.
+	meu := "pedido42vencimentonovembro0001"
+	args := map[string]any{"valor": "50.00", "vencimento": "2026-11-30", "devedor_nome": "Empresa", "devedor_documento": "11222333000181", "txid": meu}
+	if texto, erro = ferramenta(t, cs, "criar_cobranca_vencimento", args); erro || jsonDe(t, texto)["txid"] != meu || !strings.Contains(texto, `"cnpj"`) {
+		t.Fatalf("com txid: %s", texto)
+	}
+	if texto, erro = ferramenta(t, cs, "criar_cobranca_vencimento", args); erro || jsonDe(t, texto)["txid"] != meu {
+		t.Fatalf("tentar de novo com o mesmo txid: %s", texto)
+	}
+
+	if texto, erro = ferramenta(t, cs, "criar_cobranca_vencimento", map[string]any{"valor": "1.00", "vencimento": "2026-11-30"}); !erro || !strings.Contains(texto, "devedor") || strings.Contains(texto, "o Vintém respondeu") {
+		t.Fatalf("sem devedor: %v %s", erro, texto)
 	}
 }

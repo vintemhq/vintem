@@ -32,7 +32,7 @@ terminal: cinco segundos depois o "pagador" de mentira paga e a cobrança vira
 ## Use com seu agente
 
 `vintem mcp` é um servidor MCP para agentes de IA: cria, consulta, lista e
-cancela cobranças Pix, e devolve pagamentos. Ele fala com a API do Vintém usando
+cancela cobranças Pix, emite cobranças com vencimento, e devolve pagamentos. Ele fala com a API do Vintém usando
 uma API key, então os escopos da key valem: uma key só de leitura dá um agente
 que só consulta.
 

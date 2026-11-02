@@ -13,6 +13,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # O cache do GitHub Actions às vezes trava, e o padrão é esperar 10 minutos
+  # por segmento (#180). Com 2, o cache desiste e o job segue sem ele: baixar as
+  # dependências de novo leva segundos.
+  SEGMENT_DOWNLOAD_TIMEOUT_MINS: "2"
+
 concurrency:
   group: site-${{ github.ref }}
   cancel-in-progress: true
