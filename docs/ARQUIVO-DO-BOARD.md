@@ -46,7 +46,7 @@ passa a ser testado de ponta a ponta. Os bancos que não foram testados de verda
 | PR → `develop` | O que entrou | Release → `main` |
 |---|---|---|
 | [#171](https://github.com/vintemhq/vintem/pull/171) `19083f5` | Leva do v0.11.1 no arquivo do board | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
-| [#172](https://github.com/vintemhq/vintem/pull/172) `6a23a1d` | Home do site com taxas e bancos, glossário e FAQ | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#172](https://github.com/vintemhq/vintem/pull/172) `6a23a1d` | Home do site com taxas e bancos, glossário e FAQ ([#150](https://github.com/vintemhq/vintem/issues/150)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
 | [#173](https://github.com/vintemhq/vintem/pull/173) `f83f306` | Logo do Vintém e identidade do design system no site | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
 | [#174](https://github.com/vintemhq/vintem/pull/174) `92887e6` | Índice do site destaca as últimas seções, e o menu lateral pode ser escondido | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
 | [#175](https://github.com/vintemhq/vintem/pull/175) `4a4ca44` | Seta na borda do menu lateral para esconder e mostrar | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
