@@ -22,6 +22,11 @@ make run    # sobe em :8080
 
 Requisitos: Go 1.27+, [golangci-lint](https://golangci-lint.run/) v2, Docker (para a imagem).
 
+O `make test` inclui o `test/e2e`: ele compila o binário, sobe o `vintem sandbox`,
+cria uma cobrança, espera o pagamento (5 s) e confere que os eventos chegam com
+assinatura válida num servidor de teste. Para iterar rápido, `go test -short ./...`
+pula essa parte.
+
 ## Fluxo
 
 - Branch a partir de `develop`: `feature/descricao-curta` ou `fix/descricao-curta`.

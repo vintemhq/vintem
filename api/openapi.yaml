@@ -43,8 +43,8 @@ tags:
       recebedor é a conta da recorrência, então o corpo não traz recebedor.
   - name: Pix
     description: >-
-      Devolução de Pix recebidos (RN-20, RN-21). O Pix precisa estar gravado no
-      Vintém, pelo webhook ou pela conciliação.
+      Pix recebidos e devoluções (RN-20, RN-21, RN-30). O Vintém só conhece o Pix
+      depois de gravá-lo, pelo webhook do banco ou pela conciliação.
   - name: Vintém
     description: Rotas do Vintém, fora da spec do BCB.
   - name: Webhooks
@@ -661,6 +661,73 @@ paths:
         "403":
           $ref: "#/components/responses/AcessoNegado"
 
+  /pix:
+    get:
+      tags: [Pix]
+      operationId: listarPix
+      summary: Listar Pix recebidos
+      description: >-
+        Lista os Pix gravados no Vintém com horário em [inicio, fim), cada um com
+        as devoluções. Uma API key restrita a uma conta só vê os Pix dela.
+      parameters:
+        - $ref: "#/components/parameters/Inicio"
+        - $ref: "#/components/parameters/Fim"
+        - name: txid
+          in: query
+          schema:
+            $ref: "#/components/schemas/Txid"
+        - name: txIdPresente
+          in: query
+          description: true só Pix de cobrança; false só Pix sem txid (chave ou QR estático).
+          schema:
+            type: boolean
+        - name: devolucaoPresente
+          in: query
+          description: true só Pix com devolução; false só Pix sem devolução.
+          schema:
+            type: boolean
+        - $ref: "#/components/parameters/CpfFiltro"
+        - $ref: "#/components/parameters/CnpjFiltro"
+        - $ref: "#/components/parameters/PaginaAtual"
+        - $ref: "#/components/parameters/ItensPorPagina"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Página de Pix recebidos.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PixConsultados"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+  /pix/{e2eid}:
+    parameters:
+      - $ref: "#/components/parameters/E2eidPath"
+    get:
+      tags: [Pix]
+      operationId: consultarPix
+      summary: Consultar Pix recebido
+      description: Devolve o Pix gravado no Vintém, com as devoluções.
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Pix recebido.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pix"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
   /pix/{e2eid}/devolucao/{id}:
     parameters:
       - $ref: "#/components/parameters/E2eidPath"
@@ -2031,6 +2098,45 @@ components:
         infoPagador:
           type: string
           maxLength: 140
+        devolucoes:
+          type: array
+          description: Devoluções do Pix. Só vem no GET /pix e no GET /pix/{e2eid}.
+          items:
+            $ref: "#/components/schemas/Devolucao"
+
+    PixConsultados:
+      type: object
+      required: [parametros, pix]
+      properties:
+        parametros:
+          $ref: "#/components/schemas/ParametrosConsultaPix"
+        pix:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pix"
+
+    ParametrosConsultaPix:
+      type: object
+      required: [inicio, fim, paginacao]
+      properties:
+        inicio:
+          type: string
+          format: date-time
+        fim:
+          type: string
+          format: date-time
+        txid:
+          $ref: "#/components/schemas/Txid"
+        txIdPresente:
+          type: boolean
+        devolucaoPresente:
+          type: boolean
+        cpf:
+          $ref: "#/components/schemas/Cpf"
+        cnpj:
+          $ref: "#/components/schemas/Cnpj"
+        paginacao:
+          $ref: "#/components/schemas/Paginacao"
 
     ParametrosConsulta:
       type: object

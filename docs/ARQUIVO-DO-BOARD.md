@@ -37,6 +37,54 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 02/11/2026 — v0.12.0: tudo o que não dependia de banco real
+
+Uma leva só de código que dava para fechar sem conta PJ: os Pix recebidos saem pela API, a CLI e o
+MCP ganham o que faltava para scripts e agentes, o webhook pode ser cancelado no banco, e o binário
+passa a ser testado de ponta a ponta. Os bancos que não foram testados de verdade continuam assim.
+
+| PR → `develop` | O que entrou | Release → `main` |
+|---|---|---|
+| [#171](https://github.com/vintemhq/vintem/pull/171) `19083f5` | Leva do v0.11.1 no arquivo do board | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#172](https://github.com/vintemhq/vintem/pull/172) `6a23a1d` | Home do site com taxas e bancos, glossário e FAQ ([#150](https://github.com/vintemhq/vintem/issues/150)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#173](https://github.com/vintemhq/vintem/pull/173) `f83f306` | Logo do Vintém e identidade do design system no site | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#174](https://github.com/vintemhq/vintem/pull/174) `92887e6` | Índice do site destaca as últimas seções, e o menu lateral pode ser escondido | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#175](https://github.com/vintemhq/vintem/pull/175) `4a4ca44` | Seta na borda do menu lateral para esconder e mostrar | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#183](https://github.com/vintemhq/vintem/pull/183) `9cae086` | Saída em JSON nos comandos `listar` da CLI ([#116](https://github.com/vintemhq/vintem/issues/116)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#184](https://github.com/vintemhq/vintem/pull/184) `5eea971` | `listar_cobrancas` do MCP lista as últimas 24 horas sem período ([#119](https://github.com/vintemhq/vintem/issues/119)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#185](https://github.com/vintemhq/vintem/pull/185) `d9ab839` | Cobrança com vencimento pelo MCP ([#114](https://github.com/vintemhq/vintem/issues/114)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#186](https://github.com/vintemhq/vintem/pull/186) `3b12f38` | Cache travado não prende o CI por 10 minutos ([#180](https://github.com/vintemhq/vintem/issues/180)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#187](https://github.com/vintemhq/vintem/pull/187) `2ffa216` | Painel usa o símbolo e o favicon novos ([#179](https://github.com/vintemhq/vintem/issues/179)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#189](https://github.com/vintemhq/vintem/pull/189) `cb5fa3f` | `GET /pix` e `GET /pix/{e2eid}` para os Pix recebidos ([#188](https://github.com/vintemhq/vintem/issues/188)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#190](https://github.com/vintemhq/vintem/pull/190) `11d56d2` | Cancelar o webhook registrado no banco pela CLI ([#178](https://github.com/vintemhq/vintem/issues/178)) | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#191](https://github.com/vintemhq/vintem/pull/191) `aa9e23d` | Testes do enviador de webhooks de saída | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+| [#192](https://github.com/vintemhq/vintem/pull/192) `5786f02` | Suíte e2e com o binário em modo sandbox | [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) · [#193](https://github.com/vintemhq/vintem/pull/193) `af52456` |
+
+> Release [v0.12.0](https://github.com/vintemhq/vintem/releases/tag/v0.12.0) com binários (linux, darwin e windows, amd64 e arm64), checksums e imagem
+> `ghcr.io/vintemhq/vintem:0.12.0` para `linux/amd64` e `linux/arm64`. O binário `linux_amd64` baixado do release bateu
+> com o `checksums.txt` e respondeu `0.12.0`; a imagem foi conferida pelo manifesto no ghcr, sem rodar.
+
+### O que o e2e prova que os outros testes não provavam
+
+Os testes de cada camada montam o roteador e os jobs no próprio processo. O `test/e2e` compila o
+binário, sobe o `vintem sandbox`, cadastra o destino pela CLI enquanto o `serve` roda no mesmo SQLite,
+espera o pagamento e confere a assinatura de cada evento com a biblioteca oficial do Standard
+Webhooks. Com o segredo errado, ele falha dizendo quantos eventos chegaram com assinatura inválida.
+
+### Remover o webhook cancela no banco antes
+
+O token local só é apagado depois que o banco confirma. Se o banco falhar, a URL continua registrada
+lá e os avisos continuam chegando, então o token precisa continuar valendo. Banco sem webhook na chave
+conta como já removido.
+
+### Ficou aberto
+
+- O [#182](https://github.com/vintemhq/vintem/pull/182) (`vintem version` com `go install`) não entrou: como está, um build local num checkout git mostraria uma pseudo-versão em vez de `dev`.
+- O SDK no npm continua na `0.1.1`, sem o `vintem.pix`.
+- Inter, Sicoob e BB continuam sem teste no banco real. A homologação do BB não precisa de conta PJ e é a próxima.
+
+---
+
 ## Leva de 30/10/2026 (fim da tarde) — v0.11.1: o primeiro Pix de verdade
 
 O primeiro teste com dinheiro real, numa conta Efí Pro (CPF): uma cobrança de R$ 1,00 e outra de

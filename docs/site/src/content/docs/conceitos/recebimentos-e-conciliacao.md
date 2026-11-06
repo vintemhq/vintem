@@ -22,6 +22,9 @@ https://vintem.suaempresa.com/webhooks/pix/{conta}/{token}
   o comando de novo troca o token.
 - **A rota não usa API key,** porque quem chama é o banco. Token ausente ou errado
   responde **401** [`NaoAutenticado`](/erros/naoautenticado/), sem dizer o que houve.
+- **Para cancelar,** rode `vintem conta webhook minha-loja --remover`. O aviso sai do
+  banco e a URL deixa de valer. Faça isso depois de um teste, para a chave Pix não
+  ficar apontando para uma URL morta. Se o banco falhar, nada muda aqui.
 - **O banco acrescenta `/pix` à URL,** como manda a spec. Os dois caminhos são aceitos.
 - **Um item inválido recusa o lote inteiro,** com **400**
   [`WebhookInvalido`](/erros/webhookinvalido/). É melhor o banco reenviar do que um
@@ -76,5 +79,22 @@ Além dos Pix, a mesma rodada consulta no banco:
   instâncias consultem o banco no mesmo segundo.
 
 No sandbox, a conciliação roda a cada 10 segundos, e é ela que encontra os pagamentos.
+
+## Consultar os Pix recebidos
+
+Os Pix que o Vintém gravou saem pelas mesmas rotas da spec do BCB, com o escopo `pix:read`:
+
+```bash
+curl "http://localhost:8080/pix?inicio=2026-11-01T00:00:00Z&fim=2026-11-02T00:00:00Z" \
+  -H "Authorization: Bearer vtm_..."
+curl http://localhost:8080/pix/E00000000202611021130NCMDKVJFYNX -H "Authorization: Bearer vtm_..."
+```
+
+- **A janela é pelo horário do Pix,** e não pela criação da cobrança.
+- **Filtros:** `txid`, `txIdPresente` (só Pix de cobrança, ou só os sem), `devolucaoPresente`,
+  e `cpf` ou `cnpj` do pagador. A paginação é a mesma do `GET /cob`.
+- **Cada Pix vem com as devoluções,** em `devolucoes`.
+- **É o que o Vintém conhece,** não uma consulta ao banco: um Pix que ainda não foi
+  avisado nem conciliado não aparece. Rode `vintem conciliar` se precisar dele agora.
 
 As regras completas são a [RN-30 e a RN-31](/gerado/regras-de-negocio/).

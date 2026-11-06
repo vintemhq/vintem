@@ -37,7 +37,7 @@ Cada rota exige exatamente um escopo. Dê a cada aplicação só o que ela preci
 | `cob:write` | `POST /cob`, `PUT /cob/{txid}` e `PATCH /cob/{txid}` |
 | `cobv:read` | `GET /cobv/{txid}` e `GET /cobv` |
 | `cobv:write` | `PUT /cobv/{txid}` e `PATCH /cobv/{txid}` |
-| `pix:read` | `GET /pix/{e2eid}/devolucao/{id}` |
+| `pix:read` | `GET /pix`, `GET /pix/{e2eid}` e `GET /pix/{e2eid}/devolucao/{id}` |
 | `devolucao:write` | `PUT /pix/{e2eid}/devolucao/{id}` |
 | `rec:read` | `GET /rec/{idRec}` e `GET /solicrec/{idSolicRec}` |
 | `rec:write` | `POST /rec`, `POST /solicrec` e `PATCH /solicrec/{idSolicRec}` |

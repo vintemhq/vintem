@@ -34,5 +34,15 @@ Rode `vintem mcp` por stdio com estas variáveis:
 | `consultar_cobranca` | `cob:read` |
 | `listar_cobrancas` | `cob:read` |
 | `cancelar_cobranca` | `cob:write` |
+| `criar_cobranca_vencimento` | `cobv:write` |
+| `consultar_cobranca_vencimento` | `cobv:read` |
 | `devolver_pix` | `devolucao:write` |
 | `consultar_devolucao` | `pix:read` |
+
+Sem `inicio` e `fim`, `listar_cobrancas` lista as cobranças das últimas 24 horas. Para
+outro período, informe os dois em RFC 3339.
+
+`criar_cobranca_vencimento` cria a [cobrança com vencimento](/conceitos/cobrancas/) (`cobv`),
+que exige o devedor (nome e CPF ou CNPJ) e aceita multa (percentual) e juros (percentual
+ao mês). Sem `txid`, ela gera um. Tentar de novo com o mesmo `txid` e os mesmos dados
+devolve a mesma cobrança.

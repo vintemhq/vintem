@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { sessao } from "./api";
 import { Button } from "./componentes/Button";
+import { Marca } from "./componentes/Simbolo";
 import { CobrancaDetalhe, Cobrancas } from "./telas/Cobrancas";
 import { Contas } from "./telas/Contas";
 import { Login } from "./telas/Login";
@@ -32,7 +33,7 @@ export function App() {
     <div style={{ display: "grid", gridTemplateColumns: "220px minmax(0, 1fr)", minHeight: "100vh" }}>
       <a href="#conteudo" className="sr-only">Pular para o conteúdo</a>
       <nav aria-label="Principal" style={{ borderRight: "1px solid var(--border)", padding: "var(--space-6) var(--space-4)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-        <div style={{ fontWeight: 700, fontSize: "var(--text-20)", marginBottom: "var(--space-4)" }}><span style={{ color: "var(--brand)" }}>◆</span> Vintém</div>
+        <div style={{ fontSize: "var(--text-20)", marginBottom: "var(--space-4)" }}><Marca /></div>
         {menu.map((m) => {
           const ativo = m.rota === "/" ? rota === "/" : rota.startsWith(m.rota);
           return (

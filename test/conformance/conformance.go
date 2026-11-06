@@ -333,6 +333,30 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 	})
 
+	t.Run("webhook: remover a URL registrada", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapWebhook)
+		url := a.URLWebhook
+		if url == "" {
+			if a.Real {
+				t.Skip("o banco testa a URL do webhook antes de aceitar: o alvo precisa de URLWebhook pública")
+			}
+			url = "https://vintem.example.com/webhook/" + a.Conta.ID
+		}
+		ctx := context.Background()
+		if err := a.PSP.ConfigurarWebhook(ctx, a.Conta, url); err != nil {
+			t.Fatal(err)
+		}
+		if err := a.PSP.RemoverWebhook(ctx, a.Conta); err != nil {
+			t.Fatalf("remover: %v", err)
+		}
+		// Sem webhook registrado, o banco responde 404: o adapter traduz para
+		// ErrNaoEncontrado, e o Vintém trata como já removido.
+		if err := a.PSP.RemoverWebhook(ctx, a.Conta); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("remover de novo: err = %v, quer ErrNaoEncontrado", err)
+		}
+	})
+
 	t.Run("webhook: interpreta o aviso de Pix no formato da spec", func(t *testing.T) {
 		a := novo(t)
 		exigir(t, a, ports.CapWebhook)

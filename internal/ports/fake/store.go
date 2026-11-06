@@ -247,6 +247,10 @@ func (r contas) SalvarTokenWebhook(_ context.Context, id string, hash []byte) er
 	if _, ok := r.s.d.contas[id]; !ok {
 		return fmt.Errorf("conta %s: %w", id, ports.ErrNaoEncontrado)
 	}
+	if hash == nil {
+		delete(r.s.d.tokens, id)
+		return nil
+	}
 	r.s.d.tokens[id] = slices.Clone(hash)
 	return nil
 }
@@ -633,6 +637,50 @@ func (r pixes) ListarPorTxid(_ context.Context, txid domain.Txid) ([]domain.PixR
 	}
 	slices.SortFunc(out, func(a, b domain.PixRecebido) int { return a.Horario.Compare(b.Horario) })
 	return out, nil
+}
+
+func (r pixes) Listar(_ context.Context, f ports.FiltroPix) ([]domain.PixRecebido, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	out := r.filtrar(f)
+	limite := f.Limite
+	if limite <= 0 {
+		limite = 100
+	}
+	out = out[min(f.Pular, len(out)):]
+	return out[:min(limite, len(out))], nil
+}
+
+func (r pixes) Contar(_ context.Context, f ports.FiltroPix) (int, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	return len(r.filtrar(f)), nil
+}
+
+// filtrar aplica o filtro do GET /pix e ordena por horário e endToEndId, como o SQLite.
+func (r pixes) filtrar(f ports.FiltroPix) []domain.PixRecebido {
+	comDevolucao := map[string]bool{}
+	for k := range r.s.d.devs {
+		comDevolucao[k[0]] = true
+	}
+	var out []domain.PixRecebido
+	for _, p := range r.s.d.pix {
+		switch {
+		case f.ContaID != "" && p.ContaID != f.ContaID,
+			!f.Janela.Inicio.IsZero() && p.Horario.Before(f.Janela.Inicio),
+			!f.Janela.Fim.IsZero() && !p.Horario.Before(f.Janela.Fim),
+			f.Txid != "" && p.Txid != f.Txid,
+			f.TxidPresente != nil && (p.Txid != "") != *f.TxidPresente,
+			f.DevolucaoPresente != nil && comDevolucao[p.EndToEndID] != *f.DevolucaoPresente,
+			f.Documento != "" && (p.Pagador == nil || p.Pagador.Documento != f.Documento):
+			continue
+		}
+		out = append(out, p)
+	}
+	slices.SortFunc(out, func(a, b domain.PixRecebido) int {
+		return cmp.Or(a.Horario.Compare(b.Horario), cmp.Compare(a.EndToEndID, b.EndToEndID))
+	})
+	return out
 }
 
 type destinos struct{ s *Store }

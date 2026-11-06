@@ -107,6 +107,12 @@ func (a *API) ConfigurarWebhook(ctx context.Context, conta domain.Conta, enderec
 	return a.chamarCom(ctx, conta, http.MethodPut, a.cfg.Prefixo+"/webhook/"+escapar(conta.ChavePix), corpo, nil, a.cfg.HeadersWebhook)
 }
 
+// RemoverWebhook cancela a URL de aviso da chave Pix da conta
+// (DELETE {prefixo}/webhook/:chave).
+func (a *API) RemoverWebhook(ctx context.Context, conta domain.Conta) error {
+	return a.chamar(ctx, conta, http.MethodDelete, a.cfg.Prefixo+"/webhook/"+escapar(conta.ChavePix), nil, nil)
+}
+
 // ChamarNoHost chama um caminho no mesmo host da API Pix da conta, fora da
 // base (o simulador de pagamento da homologação do BB), com o token e os
 // parâmetros da conta.

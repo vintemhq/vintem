@@ -61,6 +61,11 @@ a abertura do site; o favicon e o cabeçalho usam o disco liso, que continua leg
 | `public/apple-touch-icon.png` | Tela inicial do iPhone |
 | `public/icon-512.png` | Tamanho grande, para perfis e divulgação |
 
+No painel, o símbolo é o componente `Simbolo` (`web/src/componentes/Simbolo.tsx`), com o
+mesmo desenho do `logo-*.svg` e a cor de `--brand`, e `Marca` põe o nome ao lado. O
+favicon, o de reserva e o do iPhone são cópias dos de `docs/site/public`, em `web/public`:
+quem trocar um troca o outro.
+
 ## Componentes base
 
 | Componente | Regra |

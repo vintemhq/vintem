@@ -99,7 +99,8 @@ type ContaRepo interface {
 	MarcarVencimentoAvisado(ctx context.Context, contaID, impressaoDigital string) error
 	// BuscarCredenciais devolve o blob cifrado, ou ErrNaoEncontrado se a conta não tiver credenciais.
 	BuscarCredenciais(ctx context.Context, contaID string) ([]byte, error)
-	// SalvarTokenWebhook grava o hash do token da URL de webhook da conta.
+	// SalvarTokenWebhook grava o hash do token da URL de webhook da conta. Hash
+	// nil apaga o token: o BuscarTokenWebhook volta a dar ErrNaoEncontrado.
 	SalvarTokenWebhook(ctx context.Context, contaID string, hash []byte) error
 	// BuscarTokenWebhook devolve o hash, ou ErrNaoEncontrado se a conta não tiver webhook configurado.
 	BuscarTokenWebhook(ctx context.Context, contaID string) ([]byte, error)
@@ -193,6 +194,27 @@ type PixRepo interface {
 	BuscarPorE2E(ctx context.Context, e2e string) (domain.PixRecebido, error)
 	// ListarPorTxid devolve os Pix de uma cobrança, em ordem de horário.
 	ListarPorTxid(ctx context.Context, txid domain.Txid) ([]domain.PixRecebido, error)
+	// Listar devolve os Pix que casam com o filtro, em ordem de horário e
+	// endToEndId, pulando f.Pular e trazendo no máximo f.Limite (padrão 100).
+	Listar(ctx context.Context, f FiltroPix) ([]domain.PixRecebido, error)
+	// Contar devolve quantos Pix casam com o filtro, ignorando Limite e Pular.
+	Contar(ctx context.Context, f FiltroPix) (int, error)
+}
+
+// FiltroPix restringe a listagem de Pix recebidos (GET /pix); zero vale "sem filtro".
+type FiltroPix struct {
+	ContaID string
+	// Janela filtra pelo horário do Pix: [Inicio, Fim).
+	Janela Janela
+	Txid   domain.Txid
+	// TxidPresente: true só Pix de cobrança, false só Pix sem txid, nil todos.
+	TxidPresente *bool
+	// DevolucaoPresente: true só Pix com devolução gravada, false só sem, nil todos.
+	DevolucaoPresente *bool
+	// Documento filtra pelo CPF/CNPJ do pagador.
+	Documento string
+	Limite    int
+	Pular     int
 }
 
 // DevolucaoRepo guarda as devoluções de Pix recebidos (RN-20, RN-21). O par

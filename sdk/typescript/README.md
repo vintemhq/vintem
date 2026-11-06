@@ -28,6 +28,7 @@ Para testar sem banco, suba o `vintem sandbox` e use a API key que ele imprime.
 |---|---|
 | `vintem.cob` | `criar`, `criarComTxid`, `consultar`, `listar`, `revisar`, `cancelar` |
 | `vintem.cobv` | `criar`, `consultar`, `listar`, `revisar` |
+| `vintem.pix` | `listar`, `consultar` |
 | `vintem.devolucao` | `solicitar`, `consultar` |
 
 Erro da API vira `VintemError`, com `status` e o `problema` no formato da spec
